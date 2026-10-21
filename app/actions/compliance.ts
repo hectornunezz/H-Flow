@@ -2,6 +2,7 @@
 
 import { revalidatePath } from 'next/cache'
 import { createClient } from '@/utils/supabase/server'
+import { calculateCoachMetrics } from '@/utils/compliance-metrics'
 
 interface ComplianceAthlete {
   id: string
@@ -13,6 +14,89 @@ interface ComplianceAthlete {
 interface AthleteReportDate {
   athlete_id: string
   date: string
+}
+
+export interface CoachMetrics {
+  complianceRate: number
+  totalAthletes: number
+  pendingReviews: number
+}
+
+export async function getCoachMetrics(coachId: string): Promise<CoachMetrics> {
+  try {
+    if (!coachId.trim()) {
+      throw new Error('El identificador del entrenador es obligatorio.')
+    }
+
+    const supabase = await createClient()
+    const {
+      data: { user },
+      error: authError,
+    } = await supabase.auth.getUser()
+
+    if (authError) {
+      throw new Error(`No se pudo verificar la sesión: ${authError.message}`)
+    }
+    if (!user || user.id !== coachId) {
+      throw new Error('No estás autorizado para consultar estas métricas.')
+    }
+
+    const { data: coach, error: coachError } = await supabase
+      .from('profiles')
+      .select('id, role')
+      .eq('id', user.id)
+      .maybeSingle()
+
+    if (coachError) {
+      throw new Error(`No se pudo verificar el entrenador: ${coachError.message}`)
+    }
+    if (!coach || coach.role !== 'coach') {
+      throw new Error('Solo un entrenador puede consultar estas métricas.')
+    }
+
+    const { data: athletesData, error: athletesError } = await supabase
+      .from('profiles')
+      .select('id')
+      .eq('trainer_id', coachId)
+      .eq('role', 'athlete')
+
+    if (athletesError) {
+      throw new Error(`No se pudieron cargar los atletas: ${athletesError.message}`)
+    }
+
+    const athleteIds = (athletesData ?? []).map((athlete) => athlete.id)
+    if (athleteIds.length === 0) return calculateCoachMetrics([], [])
+
+    const now = new Date()
+    const currentDay = now.getUTCDay()
+    const daysSinceMonday = (currentDay + 6) % 7
+    const weekStart = new Date(
+      Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate() - daysSinceMonday),
+    )
+    const weekEnd = new Date(weekStart)
+    weekEnd.setUTCDate(weekEnd.getUTCDate() + 7)
+
+    const { data: reports, error: reportsError } = await supabase
+      .from('athlete_metrics')
+      .select('athlete_id')
+      .in('athlete_id', athleteIds)
+      .gte('date', weekStart.toISOString().slice(0, 10))
+      .lt('date', weekEnd.toISOString().slice(0, 10))
+
+    if (reportsError) {
+      throw new Error(`No se pudieron cargar los reportes: ${reportsError.message}`)
+    }
+
+    return calculateCoachMetrics(
+      athleteIds,
+      (reports ?? []).map((report) => report.athlete_id),
+    )
+  } catch (error) {
+    const message =
+      error instanceof Error ? error.message : 'Error inesperado al consultar las métricas.'
+    console.error('[getCoachMetrics]', message)
+    throw new Error(message)
+  }
 }
 
 export async function checkAthleteCompliance(): Promise<number> {

@@ -2,6 +2,7 @@
 
 import { useState, type FormEvent, type ReactNode } from 'react'
 import { signout } from '@/app/actions'
+import ThemeToggle from '@/components/ThemeToggle'
 import { LogOut, Save, Shield, User } from 'lucide-react'
 
 interface Props {
@@ -168,6 +169,18 @@ export default function AjustesTab({ user }: Props) {
             checked={checkInNotifications}
             onChange={() => setCheckInNotifications((value) => !value)}
           />
+        </div>
+      </Section>
+
+      <Section title="Apariencia">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-medium text-slate-200">Tema de la aplicación</p>
+            <p className="mt-0.5 text-xs text-slate-500">
+              Elige entre el modo oscuro y el modo claro.
+            </p>
+          </div>
+          <ThemeToggle />
         </div>
       </Section>
 

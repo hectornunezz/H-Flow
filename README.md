@@ -25,3 +25,20 @@ H-Flow es una plataforma SaaS B2B impulsada por IA para Entrenadores de Élite. 
 - **Glassmorphism:** paneles translúcidos, desenfoque y bordes sutiles aportan jerarquía visual sin recargar la interfaz.
 - **Mobile-First:** componentes y vistas adaptables priorizan el uso desde dispositivos móviles, donde los entrenadores suelen consultar reportes y tareas.
 - **Acento de marca:** el naranja `#FF5A00` destaca acciones principales y estados importantes.
+
+## Variables de entorno en Vercel
+
+Configura estas variables en **Vercel → Project Settings → Environment Variables** para los entornos que correspondan. No guardes sus valores en `vercel.json` ni en el repositorio:
+
+| Variable | Uso |
+| --- | --- |
+| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública anon de Supabase |
+| `SUPABASE_SERVICE_ROLE_KEY` | Clave privada para operaciones administrativas del webhook Stripe |
+| `GROQ_API_KEY` | Autenticación con la API de Groq |
+| `STRIPE_SECRET_KEY` | Clave privada de Stripe |
+| `STRIPE_WEBHOOK_SECRET` | Secreto de firma del webhook Stripe |
+| `STRIPE_PRICE_ID` | ID del precio recurrente de Stripe |
+| `NEXT_PUBLIC_APP_URL` | URL HTTPS pública de la aplicación |
+
+En Stripe, configura el webhook para `POST /api/stripe/webhook` y suscribe el evento `checkout.session.completed`.
