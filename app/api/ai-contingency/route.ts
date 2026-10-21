@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server'
+import { createClient } from '@/utils/supabase/server'
 
 export const runtime = 'nodejs'
 export const dynamic = 'force-dynamic'
@@ -17,12 +18,61 @@ interface ContingencyResponse {
 
 export async function POST(request: Request) {
   try {
-    const body: ContingencyRequest = await request.json()
-    const { athleteMessage, currentExercise, exerciseBank } = body
+    const supabase = await createClient()
+    const { data: { user }, error: authError } = await supabase.auth.getUser()
 
-    if (!athleteMessage || !currentExercise || !Array.isArray(exerciseBank)) {
+    if (authError) {
+      throw new Error(`No se pudo verificar la sesión: ${authError.message}`)
+    }
+
+    if (!user) {
       return NextResponse.json(
-        { error: 'Faltan parámetros requeridos: athleteMessage, currentExercise, exerciseBank.' },
+        { error: 'Debes iniciar sesión para solicitar una sugerencia.' },
+        { status: 401 }
+      )
+    }
+
+    let body: unknown
+    try {
+      body = await request.json()
+    } catch {
+      return NextResponse.json(
+        { error: 'El cuerpo de la solicitud debe ser JSON válido.' },
+        { status: 400 }
+      )
+    }
+
+    if (typeof body !== 'object' || body === null) {
+      return NextResponse.json(
+        { error: 'Los datos de la consulta no son válidos.' },
+        { status: 400 }
+      )
+    }
+
+    const { athleteMessage, currentExercise, exerciseBank } = body as Partial<ContingencyRequest>
+
+    if (
+      typeof athleteMessage !== 'string' ||
+      athleteMessage.trim().length === 0 ||
+      athleteMessage.length > 1000 ||
+      typeof currentExercise !== 'string' ||
+      currentExercise.trim().length === 0 ||
+      currentExercise.length > 200 ||
+      !Array.isArray(exerciseBank) ||
+      exerciseBank.length === 0 ||
+      exerciseBank.length > 500 ||
+      exerciseBank.some((item) =>
+        typeof item === 'string'
+          ? item.trim().length === 0 || item.length > 150
+          : typeof item !== 'object' ||
+            item === null ||
+            typeof item.name !== 'string' ||
+            item.name.trim().length === 0 ||
+            item.name.length > 150
+      )
+    ) {
+      return NextResponse.json(
+        { error: 'Los datos de la consulta no son válidos o superan el límite permitido.' },
         { status: 400 }
       )
     }

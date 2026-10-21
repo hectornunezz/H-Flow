@@ -6,9 +6,10 @@
 
 import { addExercise } from '@/app/actions'
 import ExerciseList from '@/components/ExerciseList'
+import type { ExerciseRecord } from '@/types'
 
 interface Props {
-  exercises: any[]
+  exercises: ExerciseRecord[]
 }
 
 export default function BibliotecaTab({ exercises }: Props) {

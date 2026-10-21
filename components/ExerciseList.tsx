@@ -2,8 +2,9 @@
 
 import { useState } from 'react'
 import { deleteExercise } from '@/app/actions'
+import type { ExerciseRecord } from '@/types'
 
-export default function ExerciseList({ exercises }: { exercises: any[] }) {
+export default function ExerciseList({ exercises }: { exercises: ExerciseRecord[] }) {
   const [search, setSearch] = useState('')
 
   const filtered = exercises.filter(
@@ -29,7 +30,7 @@ export default function ExerciseList({ exercises }: { exercises: any[] }) {
         </h2>
         {filtered.length > 0 ? (
           <ul className="divide-y divide-slate-800/60">
-            {filtered.map((ex: any) => (
+            {filtered.map((ex) => (
               <li key={ex.id} className="py-4 flex flex-col gap-3">
                 <div className="space-y-1.5 min-w-0 flex-1">
                   <div className="flex flex-wrap items-center gap-2">

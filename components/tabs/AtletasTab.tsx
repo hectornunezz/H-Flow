@@ -6,13 +6,14 @@
  */
 
 import { Users } from 'lucide-react'
+import type { ProfileRecord } from '@/types'
 
 interface Props {
-  profiles: any[]
+  profiles: ProfileRecord[]
 }
 
 export default function AtletasTab({ profiles }: Props) {
-  const athletes = profiles.filter((p: any) => p.role === 'athlete')
+  const athletes = profiles.filter((profile) => profile.role === 'athlete')
 
   return (
     <div className="space-y-6">

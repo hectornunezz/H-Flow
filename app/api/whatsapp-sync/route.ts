@@ -49,7 +49,7 @@ type WhatsAppSyncSuccess = {
   transcription: string
   task: Task
   meta: {
-    transcriptionSource: 'mock' | 'groq-whisper'
+    transcriptionSource: 'mock' | 'groq-whisper' | 'text-input'
     structuringProvider: string
     model: string
   }
@@ -112,7 +112,7 @@ async function transcribeWithGroqWhisper(audio: Blob, filename: string): Promise
  */
 async function resolveTranscription(request: Request): Promise<{
   transcription: string
-  source: 'mock' | 'groq-whisper'
+  source: 'mock' | 'groq-whisper' | 'text-input'
 }> {
   const mockEnabled = (process.env.WHATSAPP_SYNC_MOCK ?? 'true').toLowerCase() !== 'false'
 
@@ -125,6 +125,21 @@ async function resolveTranscription(request: Request): Promise<{
     const candidate = form.get('audio')
     if (candidate instanceof File && candidate.size > 0) {
       audioFile = candidate
+    }
+  } else if (contentType.includes('application/json')) {
+    const body: unknown = await request.json()
+    if (typeof body === 'object' && body !== null && 'transcription' in body) {
+      if (typeof body.transcription !== 'string') {
+        throw new Error('La transcripción debe ser texto.')
+      }
+
+      const transcription = body.transcription.trim()
+      if (transcription.length > 5000) {
+        throw new Error('La transcripción no puede superar los 5000 caracteres.')
+      }
+      if (transcription) {
+        return { transcription, source: 'text-input' }
+      }
     }
   }
 

@@ -5,19 +5,24 @@
  */
 
 import { assignWorkout } from '@/app/actions'
+import type {
+  AssignedWorkoutRecord,
+  ProfileRecord,
+  WorkoutRecord,
+} from '@/types'
 
 interface Props {
-  workouts:         any[]
-  profiles:         any[]
-  assignedWorkouts: any[]
+  workouts:         WorkoutRecord[]
+  profiles:         ProfileRecord[]
+  assignedWorkouts: AssignedWorkoutRecord[]
 }
 
 export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: Props) {
-  const athletes  = profiles.filter((p: any) => p.role === 'athlete')
+  const athletes  = profiles.filter((profile) => profile.role === 'athlete')
   const canAssign = workouts.length > 0 && athletes.length > 0
 
-  const pending   = assignedWorkouts.filter((a: any) => !a.completed)
-  const completed = assignedWorkouts.filter((a: any) => a.completed)
+  const pending   = assignedWorkouts.filter((assignment) => !assignment.completed)
+  const completed = assignedWorkouts.filter((assignment) => assignment.completed)
 
   return (
     <div className="space-y-6 sm:space-y-8 max-w-3xl">
@@ -63,7 +68,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
                 className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors min-h-10 shadow-inner"
               >
                 <option value="">Selecciona Rutina...</option>
-                {workouts.map((w: any) => (
+                {workouts.map((w) => (
                   <option key={w.id} value={w.id}>{w.title}</option>
                 ))}
               </select>
@@ -74,7 +79,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
                 className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors min-h-10 shadow-inner"
               >
                 <option value="">Selecciona Atleta...</option>
-                {athletes.map((p: any) => (
+                {athletes.map((p) => (
                   <option key={p.id} value={p.id}>
                     {p.full_name || p.email}
                   </option>
@@ -117,7 +122,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
           </div>
         ) : (
           <div className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden divide-y divide-slate-800/60">
-            {assignedWorkouts.map((aw: any) => (
+            {assignedWorkouts.map((aw) => (
               <div
                 key={aw.id}
                 className="px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"

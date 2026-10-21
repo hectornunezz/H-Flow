@@ -3,10 +3,13 @@
 import { useState, useRef, useMemo } from 'react'
 import {
   Plus, Search, ChevronDown, ChevronUp,
-  Trash2, X, Dumbbell, Calendar, SlidersHorizontal,
+  Trash2, X, Dumbbell, Calendar, SlidersHorizontal, Sparkles, Printer,
+  Maximize2, Minimize2,
 } from 'lucide-react'
+import { toast } from 'sonner'
 import type { ExerciseBank, IntensityTechnique } from '@/types/workout'
-import AIAssistantModal from './AIAssistantModal'
+import { saveCompleteRoutine } from '@/app/actions/workouts'
+import AIAssistantModal, { type AIAssistantData } from './AIAssistantModal'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ExerciseEntry {
@@ -42,7 +45,57 @@ const DAY_SUGGESTIONS = [
   'Pierna A', 'Pierna B', 'Full Body', 'Upper', 'Lower',
 ]
 
+const CATEGORY_FILTERS = [
+  { id: 'all', label: 'Todos' },
+  { id: 'pecho', label: 'Pecho' },
+  { id: 'espalda', label: 'Espalda' },
+  { id: 'hombros', label: 'Hombros' },
+  { id: 'brazos', label: 'Brazos' },
+  { id: 'piernas', label: 'Piernas' },
+  { id: 'core', label: 'Core' },
+  { id: 'cardio', label: 'Cardio' },
+] as const
+
+const EQUIPMENT_FILTERS = [
+  { id: 'all', label: 'Todo' },
+  { id: 'barra', label: 'Barra' },
+  { id: 'mancuerna', label: 'Mancuerna' },
+  { id: 'maquina', label: 'Máquina' },
+] as const
+
+type CategoryFilter = (typeof CATEGORY_FILTERS)[number]['id']
+type EquipmentFilter = (typeof EQUIPMENT_FILTERS)[number]['id']
+
+function normalizeFilterValue(value: string) {
+  return value
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLocaleLowerCase('es')
+}
+
 const uid = () => Math.random().toString(36).slice(2, 11)
+
+function isAIAssistantData(value: unknown): value is AIAssistantData {
+  if (typeof value !== 'object' || value === null) return false
+
+  const data = value as Record<string, unknown>
+  return (
+    Array.isArray(data.suggested_exercises) &&
+    data.suggested_exercises.length > 0 &&
+    data.suggested_exercises.every(exercise => typeof exercise === 'string') &&
+    typeof data.biomechanical_reason === 'string' &&
+    data.biomechanical_reason.trim().length > 0 &&
+    typeof data.adjusted_rir === 'number' &&
+    Number.isInteger(data.adjusted_rir) &&
+    data.adjusted_rir >= 0 &&
+    data.adjusted_rir <= 5
+  )
+}
+
+function getResponseError(value: unknown): string | null {
+  if (typeof value !== 'object' || value === null || !('error' in value)) return null
+  return typeof value.error === 'string' ? value.error : null
+}
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
@@ -148,12 +201,14 @@ function ExerciseCard({
 // ─── DayBlockCard ─────────────────────────────────────────────────────────────
 
 function DayBlockCard({
-  day, exerciseBank, searchQuery,
+  day, exerciseBank, searchQuery, categoryFilter, equipmentFilter,
   onUpdateDay, onDeleteDay, isActive, onToggle,
 }: {
   day:          DayBlock
   exerciseBank: ExerciseBank[]
   searchQuery:  string
+  categoryFilter: CategoryFilter
+  equipmentFilter: EquipmentFilter
   onUpdateDay:  (u: DayBlock) => void
   onDeleteDay:  () => void
   isActive:     boolean
@@ -163,12 +218,27 @@ function DayBlockCard({
   const [nameValue,   setNameValue]   = useState(day.day_name)
 
   const filtered = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase()
-    if (!q) return exerciseBank
+    const q = normalizeFilterValue(searchQuery.trim())
     return exerciseBank.filter(
-      ex => ex.name.toLowerCase().includes(q) || ex.category.toLowerCase().includes(q)
+      ex => {
+        const name = normalizeFilterValue(ex.name)
+        const category = normalizeFilterValue(ex.category)
+        const equipment = normalizeFilterValue(ex.equipment ?? '')
+        const matchesSearch =
+          !q || name.includes(q) || category.includes(q) || equipment.includes(q)
+        const matchesCategory =
+          categoryFilter === 'all' ||
+          (categoryFilter === 'brazos' && ['biceps', 'triceps'].includes(category)) ||
+          (categoryFilter === 'piernas' &&
+            ['cuadriceps', 'isquiotibiales', 'gluteos', 'pantorrillas'].includes(category)) ||
+          category === categoryFilter
+        const matchesEquipment =
+          equipmentFilter === 'all' || equipment.includes(equipmentFilter)
+
+        return matchesSearch && matchesCategory && matchesEquipment
+      }
     )
-  }, [exerciseBank, searchQuery])
+  }, [categoryFilter, equipmentFilter, exerciseBank, searchQuery])
 
   const addExercise = (ex: ExerciseBank) =>
     onUpdateDay({
@@ -262,11 +332,11 @@ function DayBlockCard({
 
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              {searchQuery ? `Resultados para "${searchQuery}"` : 'Banco de Ejercicios'}
+              {searchQuery ? `Resultados para &quot;${searchQuery}&quot;` : 'Banco de Ejercicios'}
             </p>
             <div className="max-h-52 overflow-y-auto space-y-1 [scrollbar-width:thin]">
               {filtered.length === 0 ? (
-                <p className="text-xs text-slate-600 italic py-4 text-center">Sin resultados para "{searchQuery}"</p>
+                <p className="text-xs text-slate-600 italic py-4 text-center">Sin resultados para &quot;{searchQuery}&quot;</p>
               ) : (
                 filtered.map(ex => (
                   <button
@@ -294,15 +364,70 @@ function DayBlockCard({
 // ─── ModularBuilder ────────────────────────────────────────────────────────────
 
 export default function ModularBuilder({ exerciseBank, onSave }: Props) {
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false);
-  const [aiData, setAiData] = useState<any>(null);
+  const [isSaving, setIsSaving] = useState(false)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+  const [isAIModalOpen, setIsAIModalOpen] = useState(false)
+  const [aiData, setAiData] = useState<AIAssistantData | null>(null)
+  const [selectedExerciseId, setSelectedExerciseId] = useState('')
+  const [athleteMessage, setAthleteMessage] = useState('')
+  const [isAILoading, setIsAILoading] = useState(false)
+  const [aiError, setAiError] = useState<string | null>(null)
 
   const [days,       setDays]       = useState<DayBlock[]>([])
   const [activeDay,  setActiveDay]  = useState<string | null>(null)
   const [search,     setSearch]     = useState('')
+  const [categoryFilter, setCategoryFilter] = useState<CategoryFilter>('all')
+  const [equipmentFilter, setEquipmentFilter] = useState<EquipmentFilter>('all')
   const [addingDay,  setAddingDay]  = useState(false)
   const [newDayName, setNewDayName] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
+  const exerciseOptions = useMemo(
+    () => days.flatMap(day =>
+      day.exercises.map(entry => ({
+        id: entry.localId,
+        label: `${day.day_name} · ${entry.name}`,
+      }))
+    ),
+    [days]
+  )
+  const activeExerciseId = exerciseOptions.some(option => option.id === selectedExerciseId)
+    ? selectedExerciseId
+    : exerciseOptions[0]?.id ?? ''
+
+  const handleSaveRoutine = async () => {
+    if (isSaving || days.length === 0) return
+
+    setIsSaving(true)
+    try {
+      await saveCompleteRoutine(
+        days.map(({ day_name, exercises }) => ({
+          day_name,
+          exercises: exercises.map(({
+            exercise_id,
+            sets,
+            reps_target,
+            rir_target,
+            intensity_technique,
+          }) => ({
+            exercise_id,
+            sets,
+            reps_target,
+            rir_target,
+            intensity_technique,
+          })),
+        })),
+      )
+      onSave?.(days)
+      toast.success('Rutina guardada en Supabase.')
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'No se pudo guardar la rutina.'
+      toast.error(message)
+    } finally {
+      setIsSaving(false)
+    }
+  }
 
   const addDay = () => {
     const name  = newDayName.trim() || `Día ${days.length + 1}`
@@ -313,19 +438,162 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
     setAddingDay(false)
   }
 
-  const handleSimularIA = () => {
-    setAiData({
-      suggested_exercises: ['Aperturas en Polea', 'Press Inclinado con Mancuernas'],
-      biomechanical_reason: 'El atleta reporta molestia en el manguito rotador. Cambiamos a poleas para mantener tensión constante sin forzar la articulación en el punto de máximo estiramiento.',
-      adjusted_rir: 3
-    });
-    setIsAIModalOpen(true);
-  };
+  const openAIAssistant = () => {
+    setAiData(null)
+    setAiError(null)
+    setIsAIModalOpen(true)
+  }
+
+  const handleSimularIA = async () => {
+    const target = days
+      .flatMap(day => day.exercises)
+      .find(entry => entry.localId === activeExerciseId)
+
+    if (!target) {
+      setAiError('Añade un ejercicio a la rutina antes de solicitar una alternativa.')
+      return
+    }
+
+    if (!athleteMessage.trim()) {
+      setAiError('Describe la molestia o dificultad reportada por el atleta.')
+      return
+    }
+
+    setIsAILoading(true)
+    setAiError(null)
+    setAiData(null)
+
+    try {
+      const response = await fetch('/api/ai-contingency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        cache: 'no-store',
+        body: JSON.stringify({
+          athleteMessage: athleteMessage.trim(),
+          currentExercise: target.name,
+          exerciseBank: exerciseBank.map(({ name, category, equipment }) => ({
+            name,
+            category,
+            equipment,
+          })),
+        }),
+      })
+
+      let result: unknown
+      try {
+        result = await response.json()
+      } catch {
+        throw new Error('El servidor devolvió una respuesta no válida.')
+      }
+
+      if (!response.ok) {
+        throw new Error(getResponseError(result) ?? `No se pudo analizar la contingencia (${response.status}).`)
+      }
+
+      if (!isAIAssistantData(result)) {
+        throw new Error('La IA devolvió una sugerencia incompleta o con datos no válidos.')
+      }
+
+      const matchedSuggestions: string[] = []
+      for (const suggestion of result.suggested_exercises) {
+        const match = exerciseBank.find(
+          exercise => exercise.name.trim().localeCompare(suggestion.trim(), 'es', { sensitivity: 'base' }) === 0
+        )
+        if (match && !matchedSuggestions.includes(match.name)) {
+          matchedSuggestions.push(match.name)
+        }
+      }
+
+      if (matchedSuggestions.length === 0) {
+        throw new Error('La IA no propuso alternativas que existan en tu banco de ejercicios.')
+      }
+
+      setAiData({ ...result, suggested_exercises: matchedSuggestions })
+    } catch (error) {
+      const message = error instanceof Error
+        ? error.message
+        : 'No se pudo generar una alternativa. Inténtalo de nuevo.'
+      setAiError(message)
+      toast.error(message)
+    } finally {
+      setIsAILoading(false)
+    }
+  }
+
+  const applyAIAlternative = (exerciseName: string) => {
+    const replacement = exerciseBank.find(
+      exercise => exercise.name.localeCompare(exerciseName, 'es', { sensitivity: 'base' }) === 0
+    )
+    const target = days.flatMap(day => day.exercises).find(entry => entry.localId === activeExerciseId)
+
+    if (!replacement || !target || !aiData) {
+      const message = 'No se pudo aplicar la alternativa. Revisa el ejercicio seleccionado e inténtalo de nuevo.'
+      setAiError(message)
+      toast.error(message)
+      return
+    }
+
+    setDays(previous => previous.map(day => ({
+      ...day,
+      exercises: day.exercises.map(entry =>
+        entry.localId === target.localId
+          ? {
+              ...entry,
+              exercise_id: replacement.id,
+              name: replacement.name,
+              rir_target: aiData.adjusted_rir,
+            }
+          : entry
+      ),
+    })))
+    setIsAIModalOpen(false)
+    setAiData(null)
+    toast.success('Alternativa aplicada al constructor. Guarda la rutina para conservar los cambios.')
+  }
 
   const totalExercises = days.reduce((n, d) => n + d.exercises.length, 0)
 
   return (
-    <div className="flex flex-col gap-4">
+    <div className={isFullscreen
+      ? 'fixed inset-0 z-50 overflow-y-auto bg-slate-950 p-6'
+      : 'flex flex-col gap-4'
+    }>
+      <section className="routine-printable hidden" aria-label="Rutina para imprimir">
+        <h1 className="mb-2 text-2xl font-bold">Rutina de entrenamiento</h1>
+        {days.map(day => (
+          <section key={day.localId} className="mb-6 break-inside-avoid">
+            <h2 className="mb-3 border-b border-slate-300 pb-2 text-lg font-bold">
+              {day.day_name}
+            </h2>
+            {day.exercises.length === 0 ? (
+              <p className="text-sm">Sin ejercicios asignados.</p>
+            ) : (
+              <table className="w-full border-collapse text-left text-sm">
+                <thead>
+                  <tr>
+                    <th className="border border-slate-300 p-2">Ejercicio</th>
+                    <th className="border border-slate-300 p-2">Series</th>
+                    <th className="border border-slate-300 p-2">Repeticiones</th>
+                    <th className="border border-slate-300 p-2">RIR</th>
+                    <th className="border border-slate-300 p-2">Técnica</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {day.exercises.map(exercise => (
+                    <tr key={exercise.localId}>
+                      <td className="border border-slate-300 p-2">{exercise.name}</td>
+                      <td className="border border-slate-300 p-2">{exercise.sets}</td>
+                      <td className="border border-slate-300 p-2">{exercise.reps_target}</td>
+                      <td className="border border-slate-300 p-2">{exercise.rir_target ?? '—'}</td>
+                      <td className="border border-slate-300 p-2">{exercise.intensity_technique ?? '—'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            )}
+          </section>
+        ))}
+      </section>
 
       {/* ── Sticky top bar ── */}
       <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-md space-y-3 pb-1">
@@ -350,49 +618,104 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           )}
         </div>
 
+        <div className="space-y-2">
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            {CATEGORY_FILTERS.map(filter => {
+              const selected = categoryFilter === filter.id
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setCategoryFilter(filter.id)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition-colors ${
+                    selected
+                      ? 'border-[#FF5A00]/50 bg-[#FF5A00]/10 text-[#FF5A00]'
+                      : 'border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              )
+            })}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+            {EQUIPMENT_FILTERS.map(filter => {
+              const selected = equipmentFilter === filter.id
+              return (
+                <button
+                  key={filter.id}
+                  type="button"
+                  aria-pressed={selected}
+                  onClick={() => setEquipmentFilter(filter.id)}
+                  className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition-colors ${
+                    selected
+                      ? 'border-[#FF5A00]/50 bg-[#FF5A00]/10 text-[#FF5A00]'
+                      : 'border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                  }`}
+                >
+                  {filter.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
         <div className="flex items-center justify-between gap-3">
           <p className="text-[11px] text-slate-500 font-mono">
             {days.length} día{days.length !== 1 ? 's' : ''} · {totalExercises} ejercicios
           </p>
 
-          {!addingDay ? (
+          <div className="flex items-center gap-2">
             <button
               type="button"
-              onClick={() => setAddingDay(true)}
-              className="flex items-center gap-1.5 bg-[#FF5A00] hover:bg-[#ff6a1a] text-white text-xs font-black px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-[#FF5A00]/20"
+              onClick={() => setIsFullscreen(true)}
+              aria-label="Expandir a pantalla completa"
+              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
             >
-              <Plus className="w-4 h-4" />
-              Añadir Día
+              <Maximize2 className="h-4 w-4" aria-hidden />
+              <span className="hidden sm:inline">Pantalla Completa</span>
             </button>
-          ) : (
-            <div className="flex items-center gap-2 flex-1 justify-end">
-              <select
-                value={newDayName}
-                onChange={e => setNewDayName(e.target.value)}
-                className="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00]"
+
+            {!addingDay ? (
+              <button
+                type="button"
+                onClick={() => setAddingDay(true)}
+                className="flex items-center gap-1.5 bg-[#FF5A00] hover:bg-[#ff6a1a] text-white text-xs font-black px-4 py-2 rounded-xl transition-all active:scale-95 shadow-lg shadow-[#FF5A00]/20"
               >
-                <option value="">Plantilla...</option>
-                {DAY_SUGGESTIONS.map(s => <option key={s} value={s}>{s}</option>)}
-              </select>
-              <input
-                autoFocus
-                type="text"
-                value={newDayName}
-                onChange={e => setNewDayName(e.target.value)}
-                onKeyDown={e => { if (e.key === 'Enter') addDay(); if (e.key === 'Escape') setAddingDay(false) }}
-                placeholder="o nombre libre..."
-                className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] w-28 shrink-0"
-              />
-              <button type="button" onClick={addDay}
-                className="bg-[#FF5A00] text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 shrink-0">
-                OK
+                <Plus className="w-4 h-4" />
+                Añadir Día
               </button>
-              <button type="button" onClick={() => setAddingDay(false)}
-                className="text-slate-500 hover:text-slate-300 shrink-0">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            ) : (
+              <div className="flex items-center gap-2 flex-1 justify-end">
+                <select
+                  value={newDayName}
+                  onChange={e => setNewDayName(e.target.value)}
+                  className="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00]"
+                >
+                  <option value="">Plantilla...</option>
+                  {DAY_SUGGESTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                </select>
+                <input
+                  autoFocus
+                  type="text"
+                  value={newDayName}
+                  onChange={e => setNewDayName(e.target.value)}
+                  onKeyDown={e => { if (e.key === 'Enter') addDay(); if (e.key === 'Escape') setAddingDay(false) }}
+                  placeholder="o nombre libre..."
+                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] w-28 shrink-0"
+                />
+                <button type="button" onClick={addDay}
+                  className="bg-[#FF5A00] text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 shrink-0">
+                  OK
+                </button>
+                <button type="button" onClick={() => setAddingDay(false)}
+                  className="text-slate-500 hover:text-slate-300 shrink-0">
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -404,7 +727,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           </div>
           <div>
             <p className="text-sm font-semibold text-slate-400">Sin días todavía</p>
-            <p className="text-xs text-slate-600 mt-1">Pulsa "+ Añadir Día" para construir la rutina.</p>
+            <p className="text-xs text-slate-600 mt-1">Pulsa &quot;+ Añadir Día&quot; para construir la rutina.</p>
           </div>
         </div>
       ) : (
@@ -415,6 +738,8 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
               day={day}
               exerciseBank={exerciseBank}
               searchQuery={search}
+              categoryFilter={categoryFilter}
+              equipmentFilter={equipmentFilter}
               isActive={activeDay === day.localId}
               onToggle={() => setActiveDay(prev => prev === day.localId ? null : day.localId)}
               onUpdateDay={updated => setDays(prev => prev.map(d => d.localId === day.localId ? updated : d))}
@@ -428,31 +753,66 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
       )}
 
       {/* ── Save ── */}
-      {onSave && days.length > 0 && (
+      {days.length > 0 && (
         <div className="pt-2 border-t border-slate-800/60">
           <button
             type="button"
-            onClick={() => onSave(days)}
-            className="w-full bg-[#FF5A00] hover:bg-[#ff6a1a] text-white font-black py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-[#FF5A00]/20 text-sm tracking-wide"
+            onClick={() => window.print()}
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 py-3 text-sm font-bold text-slate-200 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
           >
-            Guardar Rutina · {days.length} día{days.length !== 1 ? 's' : ''} · {totalExercises} ejercicios
+            <Printer className="h-4 w-4" aria-hidden />
+            Exportar a PDF
+          </button>
+          <button
+            type="button"
+            onClick={handleSaveRoutine}
+            disabled={isSaving}
+            className="w-full bg-[#FF5A00] hover:bg-[#ff6a1a] disabled:cursor-not-allowed disabled:opacity-60 text-white font-black py-3.5 rounded-xl transition-all active:scale-[0.98] shadow-lg shadow-[#FF5A00]/20 text-sm tracking-wide"
+          >
+            {isSaving
+              ? 'Guardando en Supabase...'
+              : `Guardar Rutina · ${days.length} día${days.length !== 1 ? 's' : ''} · ${totalExercises} ejercicios`}
           </button>
         </div>
       )}
+      {isFullscreen && (
+        <button
+          type="button"
+          onClick={() => setIsFullscreen(false)}
+          aria-label="Salir de pantalla completa"
+          className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-xl transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
+        >
+          <Minimize2 className="h-4 w-4" aria-hidden />
+          Salir de pantalla completa
+        </button>
+      )}
       {/* ── AI Assistant Button ── */}
       <button 
-        onClick={handleSimularIA}
+        type="button"
+        onClick={openAIAssistant}
         className="fixed bottom-6 right-6 flex items-center gap-2 bg-[#FF5A00] hover:bg-[#ff6a1a] text-white px-5 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(255,90,0,0.4)] z-40 transition-all active:scale-95"
       >
         <Sparkles className="w-5 h-5" />
-        Simular IA
+        Asistente IA
       </button>
       {/* ── AI Assistant Modal ── */}
       <AIAssistantModal
         isOpen={isAIModalOpen}
         onClose={() => setIsAIModalOpen(false)}
+        exerciseOptions={exerciseOptions}
+        selectedExerciseId={activeExerciseId}
+        onSelectedExerciseChange={setSelectedExerciseId}
+        athleteMessage={athleteMessage}
+        onAthleteMessageChange={setAthleteMessage}
+        isLoading={isAILoading}
+        error={aiError}
         aiData={aiData}
-        onApprove={() => {}}
+        onGenerate={handleSimularIA}
+        onReset={() => {
+          setAiData(null)
+          setAiError(null)
+        }}
+        onApprove={applyAIAlternative}
       />
     </div>
   )

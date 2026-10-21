@@ -5,10 +5,11 @@
  */
 
 import { addWorkout, addExerciseToWorkout } from '@/app/actions'
+import type { ExerciseRecord, WorkoutRecord } from '@/types'
 
 interface Props {
-  workouts:  any[]
-  exercises: any[]
+  workouts:  WorkoutRecord[]
+  exercises: ExerciseRecord[]
 }
 
 export default function RutinasTab({ workouts, exercises }: Props) {
@@ -78,7 +79,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
           </div>
         ) : (
           <div className="space-y-3">
-            {workouts.map((w: any) => (
+            {workouts.map((w) => (
               <div
                 key={w.id}
                 className="bg-slate-900/40 backdrop-blur-xl rounded-2xl border border-slate-800/80 shadow-xl overflow-hidden"
@@ -108,7 +109,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                     </div>
                     {w.workout_exercises?.length > 0 ? (
                       <ul className="divide-y divide-slate-800/60">
-                        {w.workout_exercises.map((we: any) => (
+                        {w.workout_exercises.map((we) => (
                           <li
                             key={we.id}
                             className="px-4 py-3 flex items-center justify-between gap-3 text-xs"
@@ -154,7 +155,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                         className="bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors w-full min-h-9 shadow-inner"
                       >
                         <option value="">Selecciona ejercicio de la biblioteca...</option>
-                        {exercises.map((ex: any) => (
+                        {exercises.map((ex) => (
                           <option key={ex.id} value={ex.id}>
                             {ex.name} — [{ex.equipment || 'General'}] ({ex.difficulty || 'Intermedio'})
                           </option>

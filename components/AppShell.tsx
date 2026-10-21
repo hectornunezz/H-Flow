@@ -7,12 +7,19 @@ import {
   Users,
   MessageSquare,
   Settings,
+  Bell,
   type LucideIcon,
 } from 'lucide-react'
 import DashboardTab   from '@/components/tabs/DashboardTab'
 import AtletasTab     from '@/components/tabs/AtletasTab'
 import IAMensajesTab  from '@/components/tabs/IAMensajesTab'
 import AjustesTab     from '@/components/tabs/AjustesTab'
+import type {
+  AssignedWorkoutRecord,
+  ExerciseRecord,
+  ProfileRecord,
+  WorkoutRecord,
+} from '@/types'
 
 // ─── Tipos ───────────────────────────────────────────────────────────────────
 
@@ -31,10 +38,10 @@ export interface AppShellProps {
   pendingCount:  number
   workoutCount:  number
   exerciseCount: number
-  profiles:      any[]
-  workouts:      any[]
-  exercises:     any[]
-  assignedWorkouts: any[]
+  profiles:      ProfileRecord[]
+  workouts:      WorkoutRecord[]
+  exercises:     ExerciseRecord[]
+  assignedWorkouts: AssignedWorkoutRecord[]
 }
 
 // ─── Shell ────────────────────────────────────────────────────────────────────
@@ -44,11 +51,7 @@ export default function AppShell({
   athleteCount,
   pendingCount,
   workoutCount,
-  exerciseCount,
   profiles,
-  workouts,
-  exercises,
-  assignedWorkouts,
 }: AppShellProps) {
   const [active, setActive] = useState<TabId>('dashboard')
 
@@ -160,8 +163,23 @@ export default function AppShell({
             </div>
             <span className="font-black text-sm tracking-wider text-white">H-FLOW</span>
           </div>
-          <div className="w-7 h-7 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/20 flex items-center justify-center text-[10px] font-black text-[#FF5A00]">
-            {user.name.substring(0, 2).toUpperCase()}
+          <div className="flex items-center gap-3">
+            <div
+              className="relative flex h-8 w-8 items-center justify-center rounded-lg text-slate-300"
+              role="img"
+              aria-label={`Notificaciones: ${pendingCount} tareas pendientes`}
+              title={`${pendingCount} tareas pendientes`}
+            >
+              <Bell className="h-5 w-5" aria-hidden />
+              {pendingCount > 0 && (
+                <span className="absolute -right-1 -top-1 flex h-4 min-w-4 items-center justify-center rounded-full border border-slate-950 bg-rose-500 px-1 text-[9px] font-bold leading-none text-white">
+                  {pendingCount > 99 ? '99+' : pendingCount}
+                </span>
+              )}
+            </div>
+            <div className="w-7 h-7 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/20 flex items-center justify-center text-[10px] font-black text-[#FF5A00]">
+              {user.name.substring(0, 2).toUpperCase()}
+            </div>
           </div>
         </header>
 

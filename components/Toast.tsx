@@ -28,20 +28,19 @@ export function HFlowToaster() {
       closeButton
       toastOptions={{
         style: {
-          background: 'rgba(15, 23, 42, 0.92)',   // slate-950 semitransparente
-          border: '1px solid rgba(51, 65, 85, 0.8)', // border-slate-700/80
+          background: '#0f172a',
+          border: '1px solid #1e293b',
           backdropFilter: 'blur(16px)',
-          color: '#f1f5f9',                        // slate-100
+          color: '#f1f5f9',
           fontFamily: 'var(--font-geist-sans, system-ui)',
           fontSize: '13px',
           borderRadius: '14px',
-          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 0 1px rgba(255,90,0,0.08)',
+          boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 18px rgba(255, 90, 0, 0.12)',
         },
         classNames: {
-          // El ring naranja neón diferencia visualmente el éxito (marca H-Flow)
-          success: 'hflow-toast-success',
+          success: 'hflow-toast-success border-l-2 border-l-[#FF5A00]',
           loading: 'hflow-toast-loading',
-          error: 'hflow-toast-error',
+          error: 'hflow-toast-error border-l-2 border-l-[#FF5A00]',
         },
       }}
     />

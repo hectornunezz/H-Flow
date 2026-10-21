@@ -24,3 +24,31 @@ body {
   color: var(--foreground);
   font-family: Arial, Helvetica, sans-serif;
 }
+
+@media print {
+  @page {
+    margin: 12mm;
+  }
+
+  body * {
+    visibility: hidden !important;
+  }
+
+  .routine-printable,
+  .routine-printable * {
+    visibility: visible !important;
+  }
+
+  .routine-printable {
+    position: fixed !important;
+    inset: 0 !important;
+    z-index: 99999 !important;
+    display: block !important;
+    width: 100% !important;
+    overflow: visible !important;
+    padding: 24px !important;
+    background: #fff !important;
+    color: #0f172a !important;
+    font-family: Arial, Helvetica, sans-serif !important;
+  }
+}

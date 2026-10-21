@@ -1,40 +1,27 @@
-<<<<<<< HEAD
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
-
-## Getting Started
-
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
-
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
-
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-=======
 # H-Flow
->>>>>>> 72b97862380d051193a6e1f8a0071c9f95ec31c4
+
+H-Flow es una plataforma SaaS B2B impulsada por IA para Entrenadores de Élite. Centraliza la gestión de atletas, rutinas y tareas, y convierte reportes de voz en información estructurada para facilitar el seguimiento diario.
+
+## Arquitectura del sistema
+
+- **Next.js App Router:** interfaz web, rutas de la aplicación y lógica de servidor mediante Server Components, Client Components y Server Actions.
+- **Supabase:** autenticación y persistencia de perfiles, rutinas, bloques de entrenamiento, ejercicios y tareas.
+- **Groq Whisper:** transcripción de audio a texto.
+- **FreeLLMAPI:** procesamiento del texto transcrito para extraer información accionable y estructurar tareas.
+
+## Flujo de datos: de audio a tarea
+
+1. El entrenador proporciona un audio de WhatsApp desde la interfaz de H-Flow.
+2. El audio se envía al flujo de procesamiento del servidor.
+3. Groq Whisper transcribe el audio a texto.
+4. FreeLLMAPI analiza la transcripción e identifica los datos relevantes, como el atleta, la actividad, la fecha y la hora.
+5. La aplicación presenta la información estructurada para que el entrenador pueda revisarla.
+6. Al confirmarla, H-Flow persiste la tarea y sus datos relacionados en Supabase.
+7. La tarea queda disponible en el calendario y en el panel de seguimiento.
+
+## Decisiones de diseño
+
+- **Dark Mode:** la interfaz utiliza una base oscura para mantener una experiencia cómoda y consistente en el entorno de trabajo del entrenador.
+- **Glassmorphism:** paneles translúcidos, desenfoque y bordes sutiles aportan jerarquía visual sin recargar la interfaz.
+- **Mobile-First:** componentes y vistas adaptables priorizan el uso desde dispositivos móviles, donde los entrenadores suelen consultar reportes y tareas.
+- **Acento de marca:** el naranja `#FF5A00` destaca acciones principales y estados importantes.
