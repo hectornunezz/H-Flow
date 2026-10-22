@@ -23,12 +23,16 @@ import {
   Activity,
   Utensils,
 } from 'lucide-react'
+
+// Componentes y vistas principales de H-Flow
+import AthletesManager from '@/components/AthletesManager'
+import VoiceSimulatorWidget from '@/components/VoicesSimulatorWidget'
 import OverviewTab   from '@/components/tabs/OverviewTab'
 import AtletasTab    from '@/components/tabs/AtletasTab'
 import RutinasTab    from '@/components/tabs/RutinasTab'
 import CalendarioTab from '@/components/tabs/CalendarioTab'
 import BibliotecaTab from '@/components/tabs/BibliotecaTab'
-import AjustesTab from '@/components/tabs/AjustesTab'
+import AjustesTab    from '@/components/tabs/AjustesTab'
 import AthleteProgressCharts from '@/components/AthleteProgressCharts'
 import NutritionPlanner from '@/components/NutritionPlanner'
 import type {
@@ -46,6 +50,7 @@ type TabId =
   | 'rutinas'
   | 'calendario'
   | 'biblioteca'
+  | 'ia-mensajes'
   | 'progreso'
   | 'nutricion'
   | 'ajustes'
@@ -59,14 +64,14 @@ interface TabDef {
 }
 
 export interface DashboardTabsProps {
-  user:              { id: string; email: string | undefined }
-  exercises:         ExerciseRecord[]
-  workouts:          WorkoutRecord[]
-  profiles:          ProfileRecord[]
-  assignedWorkouts:  AssignedWorkoutRecord[]
-  athleteCount:      number
-  workoutCount:      number
-  exerciseCount:     number
+  user:               { id: string; email: string | undefined }
+  exercises:          ExerciseRecord[]
+  workouts:           WorkoutRecord[]
+  profiles:           ProfileRecord[]
+  assignedWorkouts:   AssignedWorkoutRecord[]
+  athleteCount:       number
+  workoutCount:       number
+  exerciseCount:      number
 }
 
 // ─── Componente ───────────────────────────────────────────────────────────────
@@ -93,14 +98,15 @@ export default function DashboardTabs({
   )
 
   const TABS: TabDef[] = [
-    { id: 'overview',    label: 'Dashboard',   shortLabel: 'Home',    Icon: LayoutDashboard },
-    { id: 'atletas',     label: 'Atletas',     shortLabel: 'Atletas', Icon: Users,       badge: athleteCount   || undefined },
-    { id: 'rutinas',     label: 'Rutinas',     shortLabel: 'Rutinas', Icon: Dumbbell,    badge: workoutCount   || undefined },
-    { id: 'calendario',  label: 'Calendario',  shortLabel: 'Cal.',    Icon: CalendarDays, badge: assignedWorkouts.filter((assignment) => !assignment.completed).length || undefined },
-    { id: 'biblioteca',  label: 'Biblioteca',  shortLabel: 'Biblio.', Icon: BookOpen,    badge: exerciseCount  || undefined },
-    { id: 'progreso',    label: 'Progreso',    shortLabel: 'Progreso', Icon: Activity },
-    { id: 'nutricion',   label: 'Nutrición',   shortLabel: 'Nutrición', Icon: Utensils },
-    { id: 'ajustes',     label: 'Ajustes',     shortLabel: 'Ajustes', Icon: Settings },
+    { id: 'overview',     label: 'Dashboard',   shortLabel: 'Home',     Icon: LayoutDashboard },
+    { id: 'atletas',      label: 'Atletas',     shortLabel: 'Atletas', Icon: Users,       badge: athleteCount   || undefined },
+    { id: 'rutinas',      label: 'Rutinas',     shortLabel: 'Rutinas', Icon: Dumbbell,    badge: workoutCount   || undefined },
+    { id: 'calendario',   label: 'Calendario',  shortLabel: 'Cal.',    Icon: CalendarDays, badge: assignedWorkouts.filter((assignment) => !assignment.completed).length || undefined },
+    { id: 'biblioteca',   label: 'Biblioteca',  shortLabel: 'Biblio.', Icon: BookOpen,    badge: exerciseCount  || undefined },
+    { id: 'ia-mensajes',  label: 'IA & Voz',    shortLabel: 'IA',      Icon: Activity },
+    { id: 'progreso',     label: 'Progreso',    shortLabel: 'Prog.',   Icon: Activity },
+    { id: 'nutricion',    label: 'Nutrición',   shortLabel: 'Nutri.',  Icon: Utensils },
+    { id: 'ajustes',      label: 'Ajustes',     shortLabel: 'Ajustes', Icon: Settings },
   ]
 
   return (
@@ -185,12 +191,18 @@ export default function DashboardTabs({
             />
           </>
         )}
+
         {activeTab === 'atletas' && (
-          <AtletasTab profiles={profiles} />
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-white">Gestión de Atletas (CRM)</h2>
+            <AthletesManager />
+          </div>
         )}
+
         {activeTab === 'rutinas' && (
           <RutinasTab workouts={workouts} exercises={exercises} />
         )}
+
         {activeTab === 'calendario' && (
           <CalendarioTab
             workouts={workouts}
@@ -198,11 +210,32 @@ export default function DashboardTabs({
             assignedWorkouts={assignedWorkouts}
           />
         )}
+
         {activeTab === 'biblioteca' && (
           <BibliotecaTab exercises={exercises} />
         )}
-        {activeTab === 'progreso' && <AthleteProgressCharts />}
-        {activeTab === 'nutricion' && <NutritionPlanner />}
+
+        {activeTab === 'ia-mensajes' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-white">Centro de Inteligencia de Audio</h2>
+            <VoiceSimulatorWidget />
+          </div>
+        )}
+
+        {activeTab === 'progreso' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-white">Análisis de Progreso</h2>
+            <AthleteProgressCharts />
+          </div>
+        )}
+
+        {activeTab === 'nutricion' && (
+          <div className="space-y-6">
+            <h2 className="text-xl font-bold text-white">Planificación Nutricional</h2>
+            <NutritionPlanner />
+          </div>
+        )}
+
         {activeTab === 'ajustes' && (
           <AjustesTab
             user={{
