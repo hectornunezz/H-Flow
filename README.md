@@ -1,44 +1,118 @@
-# H-Flow
+# H-FLOW
 
-H-Flow es una plataforma SaaS B2B impulsada por IA para Entrenadores de Élite. Centraliza la gestión de atletas, rutinas y tareas, y convierte reportes de voz en información estructurada para facilitar el seguimiento diario.
+H-FLOW is a B2B platform for fitness coaches. It combines an Express and
+Prisma API, a Next.js trainer dashboard, PostgreSQL, athlete portals,
+AI-assisted planning, and Remotion-powered marketing videos.
 
-## Arquitectura del sistema
+## Requirements
 
-- **Next.js App Router:** interfaz web, rutas de la aplicación y lógica de servidor mediante Server Components, Client Components y Server Actions.
-- **Supabase:** autenticación y persistencia de perfiles, rutinas, bloques de entrenamiento, ejercicios y tareas.
-- **Groq Whisper:** transcripción de audio a texto.
-- **FreeLLMAPI:** procesamiento del texto transcrito para extraer información accionable y estructurar tareas.
+- Node.js 20 or newer and npm
+- Docker Compose for the quickest full-stack setup, or PostgreSQL for local
+  development
 
-## Flujo de datos: de audio a tarea
+## Run the full stack with Docker
 
-1. El entrenador proporciona un audio de WhatsApp desde la interfaz de H-Flow.
-2. El audio se envía al flujo de procesamiento del servidor.
-3. Groq Whisper transcribe el audio a texto.
-4. FreeLLMAPI analiza la transcripción e identifica los datos relevantes, como el atleta, la actividad, la fecha y la hora.
-5. La aplicación presenta la información estructurada para que el entrenador pueda revisarla.
-6. Al confirmarla, H-Flow persiste la tarea y sus datos relacionados en Supabase.
-7. La tarea queda disponible en el calendario y en el panel de seguimiento.
+From the repository root, copy the example environment file and set strong,
+URL-safe values for the database password and JWT secret:
 
-## Decisiones de diseño
+```powershell
+Copy-Item .env.example .env
+```
 
-- **Dark Mode:** la interfaz utiliza una base oscura para mantener una experiencia cómoda y consistente en el entorno de trabajo del entrenador.
-- **Glassmorphism:** paneles translúcidos, desenfoque y bordes sutiles aportan jerarquía visual sin recargar la interfaz.
-- **Mobile-First:** componentes y vistas adaptables priorizan el uso desde dispositivos móviles, donde los entrenadores suelen consultar reportes y tareas.
-- **Acento de marca:** el naranja `#FF5A00` destaca acciones principales y estados importantes.
+Then start PostgreSQL, the API, and the frontend:
 
-## Variables de entorno en Vercel
+```sh
+docker compose up --build
+```
 
-Configura estas variables en **Vercel → Project Settings → Environment Variables** para los entornos que correspondan. No guardes sus valores en `vercel.json` ni en el repositorio:
+- Frontend: <http://localhost:3001>
+- API: <http://localhost:3000>
+- API documentation: <http://localhost:3000/api-docs>
 
-| Variable | Uso |
+The backend runs Prisma migrations during startup. Docker Compose persists
+PostgreSQL data and backend uploads, logs, and marketing media in named
+volumes.
+
+## Run locally
+
+Start PostgreSQL, then create and configure the backend environment file:
+
+```powershell
+Copy-Item hflow-backend\.env.example hflow-backend\.env
+```
+
+Set `DATABASE_URL` to your PostgreSQL instance and configure a strong
+`JWT_SECRET`. Optional integrations such as OpenAI, ElevenLabs, Stripe, SMTP,
+and Instagram can be configured as needed. Set `MARKETING_MEDIA_PUBLIC_URL` to
+an HTTPS address reachable by Instagram to publish Reels.
+
+Configure the frontend API URL:
+
+```powershell
+Copy-Item hflow-frontend\.env.example hflow-frontend\.env.local
+```
+
+Install both applications, generate Prisma Client, and build them:
+
+```sh
+npm run install:all
+npm run build:all
+```
+
+Apply database migrations and start both production servers:
+
+```sh
+npm --prefix hflow-backend run prisma:migrate:deploy
+npm run start:all
+```
+
+The API listens on port `3000`; the frontend standalone server listens on
+port `3001`.
+
+### Development servers
+
+After installing dependencies and configuring the environment:
+
+```sh
+npm --prefix hflow-backend run dev
+npm --prefix hflow-frontend run dev
+```
+
+Run each command in its own terminal. For schema changes during development,
+use `npm --prefix hflow-backend run prisma:migrate`.
+
+## Tests and checks
+
+From the repository root:
+
+```sh
+npm --prefix hflow-backend test
+npm --prefix hflow-frontend test
+npm --prefix hflow-backend run typecheck
+npm --prefix hflow-backend run build
+npm --prefix hflow-frontend run typecheck
+npm --prefix hflow-frontend run lint
+npm --prefix hflow-frontend run build
+```
+
+The frontend test command runs its API-client test; the backend test command
+runs the API regression suite. CI runs backend and frontend install, Prisma
+generation, tests, lint, and production builds on every push.
+
+## Root scripts
+
+| Command | Purpose |
 | --- | --- |
-| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto Supabase |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública anon de Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Clave privada para operaciones administrativas del webhook Stripe |
-| `GROQ_API_KEY` | Autenticación con la API de Groq |
-| `STRIPE_SECRET_KEY` | Clave privada de Stripe |
-| `STRIPE_WEBHOOK_SECRET` | Secreto de firma del webhook Stripe |
-| `STRIPE_PRICE_ID` | ID del precio recurrente de Stripe |
-| `NEXT_PUBLIC_APP_URL` | URL HTTPS pública de la aplicación |
+| `npm run install:all` | Install backend and frontend dependencies |
+| `npm run build:all` | Generate Prisma Client and build both applications |
+| `npm run start:all` | Start the API and frontend together |
+| `npm run build:backend` | Generate Prisma Client and build the API |
+| `npm run build:frontend` | Build the frontend |
 
-En Stripe, configura el webhook para `POST /api/stripe/webhook` y suscribe el evento `checkout.session.completed`.
+## Remotion
+
+Marketing episodes render MP4 videos with the `DopaminergicVideo` Remotion
+composition. The backend copies generated audio to the Remotion public assets
+directory while rendering; finished videos are streamed through the
+authenticated marketing API. See [`src/remotion/README.md`](./src/remotion/README.md)
+for manual rendering instructions.

@@ -1,0 +1,117 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model Trainer {
+  id                           String             @id @default(cuid())
+  email                        String             @unique
+  password                     String
+  name                         String
+  avatarUrl                    String?
+  createdAt                    DateTime           @default(now())
+  stripeCustomerId             String?            @unique
+  stripeSubscriptionId         String?            @unique
+  subscriptionStatus           String             @default("inactive")
+  subscriptionPriceId          String?
+  subscriptionCurrentPeriodEnd DateTime?
+  athletes                     Athlete[]
+  workoutPlans                 WorkoutPlan[]
+  nutritionPlans               NutritionPlan[]
+  marketingEpisodes            MarketingEpisode[]
+  profile                      TrainerProfile?
+}
+
+model TrainerProfile {
+  trainerId       String   @id
+  specialty       String
+  experienceYears Int
+  bio             String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  trainer         Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+}
+
+model Athlete {
+  id             String          @id @default(cuid())
+  name           String
+  objective      String
+  currentWeight  Float
+  trainerId      String
+  email          String?
+  avatarUrl      String?
+  isActive       Boolean         @default(true)
+  createdAt      DateTime        @default(now())
+  trainer        Trainer         @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  workoutPlans   WorkoutPlan[]
+  nutritionPlans NutritionPlan[]
+  checkIns       CheckIn[]
+
+  @@index([trainerId, isActive])
+  @@index([trainerId, createdAt])
+  @@index([email])
+}
+
+model CheckIn {
+  id        String   @id @default(cuid())
+  athleteId String
+  weight    Float
+  bodyFat   Float?
+  notes     String?
+  photoUrl  String?
+  createdAt DateTime @default(now())
+  athlete   Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([athleteId, createdAt])
+}
+
+model WorkoutPlan {
+  id          String   @id @default(cuid())
+  title       String
+  description String
+  trainerId   String
+  athleteId   String
+  scheduledAt DateTime?
+  createdAt   DateTime @default(now())
+  trainer     Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  athlete     Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+
+  @@index([scheduledAt, athleteId])
+}
+
+model NutritionPlan {
+  id        String   @id @default(cuid())
+  details   String
+  calories  Int
+  trainerId String
+  athleteId String
+  createdAt DateTime @default(now())
+  trainer   Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+}
+
+model MarketingEpisode {
+  id            String    @id @default(cuid())
+  trainerId     String
+  topic         String
+  topicKey      String
+  audience      String
+  tone          String
+  scheduledAt   DateTime  @default(now())
+  status        String    @default("scheduled")
+  script        String?
+  transcription String?
+  audioFileName String?
+  errorMessage  String?
+  createdAt     DateTime  @default(now())
+  completedAt   DateTime?
+  trainer       Trainer   @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+
+  @@unique([trainerId, topicKey])
+  @@index([status, scheduledAt])
+  @@index([trainerId, createdAt])
+}
