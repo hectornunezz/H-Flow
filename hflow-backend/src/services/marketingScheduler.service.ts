@@ -2,12 +2,11 @@ import { copyFile, mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
 import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "./prisma.service";
 import { videoMarketingService } from "./videoMarketing.service";
 import { instagramService } from "./instagram.service";
 import logger from "../utils/logger";
 
-const prisma = new PrismaClient();
 const POLL_INTERVAL_MS = 10_000;
 const MAX_EPISODES_PER_POLL = 5;
 const repositoryRoot = path.resolve(__dirname, "../../..");

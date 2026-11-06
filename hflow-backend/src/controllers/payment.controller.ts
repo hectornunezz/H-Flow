@@ -1,10 +1,8 @@
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import Stripe from "stripe";
+import { prisma } from "../services/prisma.service";
 import logger from "../utils/logger";
 import { stripeService } from "../services/stripe.service";
-
-const prisma = new PrismaClient();
 
 export async function getSubscriptionOverview(
   request: Request,

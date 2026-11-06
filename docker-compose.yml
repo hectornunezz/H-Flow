@@ -56,6 +56,7 @@ services:
       SMTP_PASSWORD: ${SMTP_PASSWORD:-}
       SMTP_FROM: ${SMTP_FROM:-H-Flow <no-reply@example.com>}
       PASSWORD_RESET_URL: ${PASSWORD_RESET_URL:-http://localhost:3001/reset-password}
+    command: ["sh", "-c", "npm run prisma:migrate:deploy && exec npm start"]
     ports:
       - "3000:3000"
     volumes:
@@ -67,7 +68,7 @@ services:
         - CMD
         - node
         - -e
-        - "fetch('http://127.0.0.1:3000/').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
+        - "fetch('http://127.0.0.1:3000/health/ready').then(r=>process.exit(r.ok?0:1)).catch(()=>process.exit(1))"
       interval: 10s
       timeout: 5s
       retries: 12
@@ -78,7 +79,8 @@ services:
       context: .
       dockerfile: hflow-frontend/Dockerfile
       args:
-        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api}
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+        BACKEND_INTERNAL_URL: http://backend:3000
     restart: unless-stopped
     depends_on:
       backend:

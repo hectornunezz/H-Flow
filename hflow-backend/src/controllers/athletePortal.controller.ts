@@ -1,11 +1,10 @@
 import { randomUUID } from "node:crypto";
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger";
 import { generatePlanPdf } from "../services/pdf.service";
+import { prisma } from "../services/prisma.service";
 
-const prisma = new PrismaClient();
 const PORTAL_TOKEN_LIFETIME_SECONDS = 7 * 24 * 60 * 60;
 
 function isRecord(value: unknown): value is Record<string, unknown> {

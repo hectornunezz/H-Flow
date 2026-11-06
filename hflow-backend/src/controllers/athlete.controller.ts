@@ -1,12 +1,11 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Request, Response } from "express";
 import { readFile, unlink } from "node:fs/promises";
 import path from "node:path";
 import logger from "../utils/logger";
 import { uploadDirectory } from "../middlewares/upload.middleware";
 import { CsvValidationError, parseAthleteCsv } from "../services/athleteCsv.service";
-
-const prisma = new PrismaClient();
+import { prisma } from "../services/prisma.service";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

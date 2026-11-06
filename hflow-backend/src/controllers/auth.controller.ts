@@ -1,12 +1,12 @@
 import bcrypt from "bcrypt";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Request, Response } from "express";
 import jwt from "jsonwebtoken";
 import logger from "../utils/logger";
 import { stripeService } from "../services/stripe.service";
 import { emailService } from "../services/email.service";
+import { prisma } from "../services/prisma.service";
 
-const prisma = new PrismaClient();
 const BCRYPT_ROUNDS = 12;
 const MAX_BCRYPT_PASSWORD_BYTES = 72;
 

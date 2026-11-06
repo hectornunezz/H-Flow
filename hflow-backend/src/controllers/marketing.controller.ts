@@ -1,14 +1,13 @@
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import path from "node:path";
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
 import { getMarketingVideoDirectory } from "../services/marketingScheduler.service";
+import { prisma } from "../services/prisma.service";
 import { videoMarketingService } from "../services/videoMarketing.service";
 import logger from "../utils/logger";
 
 const MAX_BATCH_SIZE = 10;
-const prisma = new PrismaClient();
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

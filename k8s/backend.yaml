@@ -1,0 +1,99 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: hflow-backend
+  namespace: hflow
+spec:
+  type: ClusterIP
+  selector:
+    app: hflow-backend
+  ports:
+    - name: http
+      port: 3000
+      targetPort: http
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: hflow-backend
+  namespace: hflow
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: hflow-backend
+  template:
+    metadata:
+      labels:
+        app: hflow-backend
+    spec:
+      terminationGracePeriodSeconds: 60
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+        fsGroup: 1000
+      containers:
+        - name: backend
+          image: ghcr.io/your-org/hflow-backend:0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 3000
+              protocol: TCP
+          envFrom:
+            - configMapRef:
+                name: hflow-config
+            - secretRef:
+                name: hflow-secrets
+          volumeMounts:
+            - name: uploads
+              mountPath: /app/hflow-backend/uploads
+            - name: marketing
+              mountPath: /app/hflow-backend/storage
+            - name: logs
+              mountPath: /app/hflow-backend/logs
+          startupProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 10
+            failureThreshold: 30
+            timeoutSeconds: 3
+          readinessProbe:
+            httpGet:
+              path: /health/ready
+              port: http
+            periodSeconds: 30
+            failureThreshold: 3
+            timeoutSeconds: 3
+          livenessProbe:
+            httpGet:
+              path: /health/live
+              port: http
+            periodSeconds: 60
+            failureThreshold: 3
+            timeoutSeconds: 3
+          resources:
+            requests:
+              cpu: 500m
+              memory: 768Mi
+            limits:
+              cpu: "2"
+              memory: 4Gi
+          securityContext:
+            allowPrivilegeEscalation: false
+            capabilities:
+              drop:
+                - ALL
+      volumes:
+        - name: uploads
+          persistentVolumeClaim:
+            claimName: hflow-uploads
+        - name: marketing
+          persistentVolumeClaim:
+            claimName: hflow-marketing
+        - name: logs
+          emptyDir: {}

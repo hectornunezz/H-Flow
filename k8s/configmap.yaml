@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: hflow-config
+  namespace: hflow
+data:
+  NODE_ENV: production
+  PORT: "3000"
+  DB_HOST: "postgres.example.com"
+  DB_PORT: "5432"
+  DB_NAME: hflow
+  DB_USER: hflow
+  FRONTEND_URL: "https://hflow.example.com"
+  FRONTEND_ORIGINS: "https://hflow.example.com"
+  ADMIN_TRAINER_IDS: ""
+  OPENAI_MODEL: gpt-4o-mini
+  WHISPER_MODEL: whisper-1
+  ELEVENLABS_MODEL_ID: eleven_multilingual_v2
+  INSTAGRAM_GRAPH_API_VERSION: v22.0
+  MARKETING_STORAGE_DIR: /app/hflow-backend/storage/marketing
+  MARKETING_VIDEO_STORAGE_DIR: /app/hflow-backend/storage/marketing/videos
+  REMOTION_PUBLIC_DIR: /app/video-generador/public
+  STRIPE_SUCCESS_URL: "https://hflow.example.com/billing/success"
+  STRIPE_CANCEL_URL: "https://hflow.example.com/pricing"
+  PASSWORD_RESET_URL: "https://hflow.example.com/reset-password"

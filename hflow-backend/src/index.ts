@@ -27,6 +27,7 @@ import {
 import logger from "./utils/logger";
 import { startDailyRemindersCron } from "./cron/dailyReminders.cron";
 import { swaggerSpec } from "./config/swagger";
+import { prisma } from "./services/prisma.service";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -75,6 +76,18 @@ app.use(
     },
   }),
 );
+app.get("/health/live", (_request, response) => {
+  response.status(200).json({ status: "ok" });
+});
+app.get("/health/ready", async (_request, response) => {
+  try {
+    await prisma.$queryRaw`SELECT 1`;
+    response.status(200).json({ status: "ready" });
+  } catch (error) {
+    logger.warn("Backend readiness check failed", { error });
+    response.status(503).json({ status: "not_ready" });
+  }
+});
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,

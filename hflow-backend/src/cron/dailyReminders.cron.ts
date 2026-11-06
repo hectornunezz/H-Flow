@@ -1,9 +1,7 @@
 import cron from "node-cron";
-import { PrismaClient } from "@prisma/client";
 import { emailService } from "../services/email.service";
+import { prisma } from "../services/prisma.service";
 import logger from "../utils/logger";
-
-const prisma = new PrismaClient();
 
 export async function sendDailyWorkoutReminders(now = new Date()): Promise<void> {
   const startOfDay = new Date(now);

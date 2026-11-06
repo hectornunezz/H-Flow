@@ -1,8 +1,9 @@
 import type { Request, Response } from "express";
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
+import { prisma } from "../services/prisma.service";
 import logger from "../utils/logger";
 
-export const prisma = new PrismaClient();
+export { prisma };
 
 export function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);

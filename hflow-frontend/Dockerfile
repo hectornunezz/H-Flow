@@ -9,7 +9,9 @@ FROM node:20-alpine AS build
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
 ARG NEXT_PUBLIC_API_URL=http://localhost:3000/api
-ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}
+ARG BACKEND_INTERNAL_URL=http://backend:3000
+ENV NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL} \
+    BACKEND_INTERNAL_URL=${BACKEND_INTERNAL_URL}
 
 COPY --from=dependencies /app/node_modules ./node_modules
 COPY hflow-frontend/ ./

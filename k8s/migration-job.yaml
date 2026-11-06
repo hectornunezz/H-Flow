@@ -1,0 +1,36 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: hflow-migrate
+  namespace: hflow
+spec:
+  backoffLimit: 5
+  activeDeadlineSeconds: 600
+  ttlSecondsAfterFinished: 86400
+  template:
+    spec:
+      restartPolicy: OnFailure
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 1000
+      initContainers:
+        - name: wait-for-postgres
+          image: postgres:16-alpine
+          command:
+            - sh
+            - -c
+            - until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; do sleep 2; done
+          envFrom:
+            - configMapRef:
+                name: hflow-config
+      containers:
+        - name: migrate
+          image: ghcr.io/your-org/hflow-backend:0.1.0
+          imagePullPolicy: IfNotPresent
+          command: ["npm", "run", "prisma:migrate:deploy"]
+          envFrom:
+            - configMapRef:
+                name: hflow-config
+            - secretRef:
+                name: hflow-secrets

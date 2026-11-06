@@ -61,4 +61,4 @@ RUN npm exec remotion -- browser ensure
 
 EXPOSE 3000
 
-CMD ["sh", "-c", "npm run prisma:migrate:deploy && exec npm start"]
+CMD ["npm", "start"]

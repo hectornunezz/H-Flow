@@ -1,8 +1,7 @@
-import { PrismaClient } from "@prisma/client";
 import type { Request, Response } from "express";
+import { prisma } from "../services/prisma.service";
 import logger from "../utils/logger";
 
-const prisma = new PrismaClient();
 const RETENTION_THRESHOLD_DAYS = 7;
 const DAY_IN_MILLISECONDS = 24 * 60 * 60 * 1000;
 

@@ -1,12 +1,11 @@
-import { Prisma, PrismaClient } from "@prisma/client";
+import { Prisma } from "@prisma/client";
 import type { Request, Response } from "express";
 import { createReadStream } from "node:fs";
 import { stat } from "node:fs/promises";
 import { getMarketingStorageDirectory } from "../services/marketingScheduler.service";
 import path from "node:path";
 import logger from "../utils/logger";
-
-const prisma = new PrismaClient();
+import { prisma } from "../services/prisma.service";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
