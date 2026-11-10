@@ -75,16 +75,21 @@ function daysFromNow(days: number): Date {
 }
 
 async function seed(): Promise<void> {
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("The demo seed is disabled in production");
+  }
+
   const hashedPassword = await bcrypt.hash(password, passwordHashRounds);
 
   await prisma.$transaction(async (transaction) => {
     const trainer = await transaction.trainer.upsert({
       where: { email: "demo@hflow.com" },
-      update: { name: "H-Flow Demo Trainer", password: hashedPassword },
+      update: { name: "H-Flow Demo Trainer", password: hashedPassword, isBetaTester: true },
       create: {
         email: "demo@hflow.com",
         name: "H-Flow Demo Trainer",
         password: hashedPassword,
+        isBetaTester: true,
       },
     });
 
