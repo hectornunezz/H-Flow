@@ -35,6 +35,15 @@ videos in named volumes. Workout videos are served through authenticated API
 routes and are not exposed as public static files. The frontend calls the API through its same-origin `/api` proxy;
 the browser does not need to resolve the backend container hostname.
 
+The root `app/` Next.js application is separate from `hflow-frontend/` and uses
+Supabase directly for sign-in and athlete portal sessions. Configure
+`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, and `GROQ_API_KEY` in the root environment before
+running it. Keep `.env.local` private; never expose or commit the service-role
+key. `NEXT_PUBLIC_API_URL` is for `hflow-frontend/`, where `/api` is proxied to
+the backend on port `3000`. Do not point it at `http://localhost:3001` because
+that is the frontend itself, not the API.
+
 Local smoke test (PowerShell, from the repository root):
 
 1. `Copy-Item .env.example .env`

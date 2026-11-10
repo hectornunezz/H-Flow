@@ -4,6 +4,7 @@ nextEnv.loadEnvConfig(process.cwd())
 
 const requiredVariables = [
   'NEXT_PUBLIC_SUPABASE_URL',
+  'NEXT_PUBLIC_SUPABASE_ANON_KEY',
   'SUPABASE_SERVICE_ROLE_KEY',
   'GROQ_API_KEY',
 ]
