@@ -10,12 +10,11 @@ import {
 } from "./videoMarketing.service";
 import { instagramService } from "./instagram.service";
 import logger from "../utils/logger";
+import { runExclusiveVideoGeneration } from "./videoGenerationQueue.service";
 
 const POLL_INTERVAL_MS = 10_000;
 const MAX_EPISODES_PER_POLL = 1;
 const repositoryRoot = path.resolve(__dirname, "../../..");
-let generationQueue: Promise<void> = Promise.resolve();
-
 export function getMarketingStorageDirectory(): string {
   return path.resolve(
     process.env.MARKETING_STORAGE_DIR || path.join(process.cwd(), "storage", "marketing"),
@@ -80,7 +79,7 @@ export async function renderMarketingVideo(
           "--codec=h264",
           "--crf=23",
           "--pixel-format=yuv420p",
-          "--concurrency=2",
+          "--concurrency=1",
           "--overwrite",
         ],
         { cwd: backendRoot, stdio: ["ignore", "ignore", "pipe"] },
@@ -108,25 +107,11 @@ export async function renderMarketingVideo(
   }
 }
 
-async function serializeGeneration<T>(task: () => Promise<T>): Promise<T> {
-  const previous = generationQueue;
-  let release!: () => void;
-  generationQueue = new Promise<void>((resolve) => {
-    release = resolve;
-  });
-  await previous;
-  try {
-    return await task();
-  } finally {
-    release();
-  }
-}
-
 export async function generateEpisode(
   episodeId: string,
   options: { publishToInstagram?: boolean; durationSeconds?: number } = {},
 ): Promise<void> {
-  await serializeGeneration(async () => {
+  await runExclusiveVideoGeneration(`marketing_episode:${episodeId}`, async () => {
     const episode = await prisma.marketingEpisode.findUnique({ where: { id: episodeId } });
     if (!episode) {
       throw new Error(`Marketing episode ${episodeId} no longer exists`);

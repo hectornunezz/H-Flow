@@ -13,7 +13,9 @@ import {
   Users,
 } from "lucide-react";
 import { useEffect, useState, type ReactNode } from "react";
-import { TOKEN_STORAGE_KEY } from "@/lib/api";
+import { ApiError, apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
+
+const PAYMENTS_ENABLED = process.env.NEXT_PUBLIC_ENABLE_PAYMENTS === "true";
 
 const navigation = [
   { label: "Resumen", href: "/dashboard", icon: LayoutDashboard },
@@ -21,7 +23,9 @@ const navigation = [
   { label: "Rutinas", href: "/dashboard/plans", icon: Dumbbell },
   { label: "Reportes", href: "/dashboard/reports", icon: ClipboardList },
   { label: "Marketing Studio", href: "/dashboard/marketing", icon: Film },
-  { label: "Facturación", href: "/dashboard/billing", icon: CreditCard },
+  ...(PAYMENTS_ENABLED
+    ? [{ label: "Facturación", href: "/dashboard/billing", icon: CreditCard }]
+    : []),
   { label: "Configuración", href: "/dashboard/settings", icon: Settings },
 ];
 
@@ -54,13 +58,41 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [authorizationFailed, setAuthorizationFailed] = useState(false);
 
   useEffect(() => {
     if (!window.localStorage.getItem(TOKEN_STORAGE_KEY)) {
       router.replace("/login");
       return;
     }
-    setIsAuthorized(true);
+
+    const controller = new AbortController();
+    let active = true;
+    void apiFetch<{ data: { trainer: { is_beta_tester: boolean } } }>("/auth/me", {
+      signal: controller.signal,
+    })
+      .then(({ data }) => {
+        if (!active) return;
+        if (data.trainer?.is_beta_tester !== true) {
+          router.replace("/beta-pending");
+          return;
+        }
+        setIsAuthorized(true);
+      })
+      .catch((error: unknown) => {
+        if (!active || controller.signal.aborted) return;
+        if (error instanceof ApiError && error.status === 401) {
+          window.localStorage.removeItem(TOKEN_STORAGE_KEY);
+          router.replace("/login");
+          return;
+        }
+        setAuthorizationFailed(true);
+      });
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [router]);
 
   function signOut() {
@@ -70,8 +102,21 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (!isAuthorized) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background">
-        <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+      <main className="grid min-h-screen place-items-center bg-background px-5 text-center">
+        {authorizationFailed ? (
+          <div className="max-w-sm">
+            <p className="text-sm text-muted">No se pudo verificar el acceso a H-FLOW.</p>
+            <button
+              className="mt-4 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-[#030712]"
+              onClick={() => window.location.reload()}
+              type="button"
+            >
+              Reintentar
+            </button>
+          </div>
+        ) : (
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+        )}
       </main>
     );
   }

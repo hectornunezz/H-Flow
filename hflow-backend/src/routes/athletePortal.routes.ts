@@ -11,10 +11,11 @@ import {
   authenticateAthletePortalToken,
   authenticateToken,
 } from "../middlewares/auth.middleware";
+import { requireBetaTester } from "../middlewares/betaAccess.middleware";
 
 const router = Router();
 
-router.post("/access", express.json(), authenticateToken, createAthletePortalAccess);
+router.post("/access", express.json(), authenticateToken, requireBetaTester, createAthletePortalAccess);
 router.get("/me", authenticateAthletePortalToken, getAthletePortal);
 router.post(
   "/checkins",

@@ -12,6 +12,7 @@ const getAuthenticatedUserRoleMock = jest.mocked(getAuthenticatedUserRole)
 describe('Next.js proxy authentication', () => {
   beforeEach(() => {
     jest.clearAllMocks()
+    process.env.NEXT_PUBLIC_ENABLE_PAYMENTS = 'true'
     createServerClientMock.mockReturnValue({} as ReturnType<typeof createServerClient>)
   })
 
@@ -33,10 +34,51 @@ describe('Next.js proxy authentication', () => {
     expect(response.cookies.get('sb-refresh-token')?.value).toBe('refreshed')
   })
 
-  it.each(['/login', '/pricing', '/pricing/pro'])('skips public route %s', async (pathname) => {
+  it.each(['/login', '/beta-pending', '/pricing', '/pricing/pro'])(
+    'skips public route %s when its feature is active',
+    async (pathname) => {
     await proxy(new NextRequest(`https://hflow.test${pathname}`))
 
     expect(createServerClientMock).not.toHaveBeenCalled()
+    },
+  )
+
+  it('hides pricing while payments are disabled', async () => {
+    process.env.NEXT_PUBLIC_ENABLE_PAYMENTS = 'false'
+
+    const response = await proxy(new NextRequest('https://hflow.test/pricing'))
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe('https://hflow.test/login')
+    expect(createServerClientMock).not.toHaveBeenCalled()
+  })
+
+  it('routes a signed-in non-tester to the beta pending screen', async () => {
+    getAuthenticatedUserRoleMock.mockResolvedValue({
+      id: 'coach-1',
+      role: 'coach',
+      isSubscribed: false,
+      isBetaTester: false,
+    })
+
+    const response = await proxy(new NextRequest('https://hflow.test/dashboard'))
+
+    expect(response.status).toBe(307)
+    expect(response.headers.get('location')).toBe('https://hflow.test/beta-pending')
+  })
+
+  it('allows an approved beta tester into the dashboard without a subscription', async () => {
+    getAuthenticatedUserRoleMock.mockResolvedValue({
+      id: 'coach-1',
+      role: 'coach',
+      isSubscribed: false,
+      isBetaTester: true,
+    })
+
+    const response = await proxy(new NextRequest('https://hflow.test/dashboard'))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('location')).toBeNull()
   })
 
   it('does not intercept API, Next assets, or public files', () => {

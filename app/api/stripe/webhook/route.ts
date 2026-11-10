@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { createClient } from '@supabase/supabase-js'
 import { NextResponse } from 'next/server'
+import { paymentsEnabled } from '@/utils/features'
 
 export const runtime = 'nodejs'
 
@@ -11,6 +12,10 @@ function getRequiredEnv(name: string): string {
 }
 
 export async function POST(request: Request) {
+  if (!paymentsEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled during the closed beta.' }, { status: 503 })
+  }
+
   const signature = request.headers.get('stripe-signature')
   if (!signature) {
     return NextResponse.json({ error: 'Falta la firma de Stripe.' }, { status: 400 })

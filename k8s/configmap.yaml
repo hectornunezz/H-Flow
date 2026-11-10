@@ -6,6 +6,8 @@ metadata:
 data:
   NODE_ENV: production
   NEXT_PUBLIC_API_URL: "/api"
+  NEXT_PUBLIC_ENABLE_PAYMENTS: "false"
+  ENABLE_PAYMENTS: "false"
   BACKEND_INTERNAL_URL: "http://hflow-backend:3000"
   DB_HOST: "hflow-postgres.hflow.svc.cluster.local"
   DB_PORT: "5432"

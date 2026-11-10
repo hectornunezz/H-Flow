@@ -61,6 +61,22 @@ function statusLabel(status: string): string {
 }
 
 export default function BillingPage() {
+  if (process.env.NEXT_PUBLIC_ENABLE_PAYMENTS !== "true") {
+    return (
+      <section className="rounded-2xl border border-line bg-card p-7 sm:p-10">
+        <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">Beta privada</p>
+        <h1 className="mt-3 text-2xl font-semibold">Pagos desactivados</h1>
+        <p className="mt-2 max-w-xl text-sm leading-6 text-muted">
+          La facturación estará disponible cuando se abra la suscripción de H-FLOW.
+        </p>
+      </section>
+    );
+  }
+
+  return <PaymentsEnabledBillingPage />;
+}
+
+function PaymentsEnabledBillingPage() {
   const [overview, setOverview] = useState<SubscriptionOverview["data"] | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isStartingCheckout, setIsStartingCheckout] = useState(false);

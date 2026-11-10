@@ -99,6 +99,39 @@ npm run start:all
 The API listens on port `3000`; the frontend standalone server listens on
 port `3001`.
 
+### Closed beta access and payments
+
+Payments are disabled by default. Set `NEXT_PUBLIC_ENABLE_PAYMENTS=true` at
+frontend build time and `ENABLE_PAYMENTS=true` in the backend environment only
+when opening paid plans. During the invite-only beta, keep both values `false`;
+the pricing section and billing navigation stay hidden, and Stripe routes reject
+requests without initializing Stripe.
+
+Apply the Supabase profile migration with the Supabase CLI (`supabase db push`)
+or the SQL editor before enabling sign-in against the project:
+`supabase/migrations/20261110120000_add_beta_tester_flag.sql`. New profiles
+default to `is_beta_tester=false`, and the database trigger prevents users from
+promoting themselves. After verifying an invite, an administrator can grant
+access in the Supabase SQL editor:
+
+```sql
+UPDATE public.profiles
+SET is_beta_tester = true
+WHERE id = (
+  SELECT id FROM auth.users WHERE email = 'invited-coach@example.com'
+);
+```
+
+The standalone JWT backend stores the same flag on `Trainer`; its Prisma
+migration runs with the existing migration Job/Compose startup. To approve a
+trainer there, update `"Trainer".is_beta_tester` through an administrator-only
+database session. Non-approved accounts land on `/beta-pending`; the backend
+also returns `403 BETA_ACCESS_PENDING` for protected trainer APIs.
+
+For local development, keep `NEXT_PUBLIC_API_URL=/api`. The frontend rewrites
+that same-origin path to the backend on port `3000`; port `3001` is the frontend
+itself and must not be used as the API base.
+
 ### Development servers
 
 After installing dependencies and configuring the environment:
@@ -184,7 +217,7 @@ Build and push the immutable image tag referenced by the manifests:
 
 ```sh
 docker build -f hflow-backend/Dockerfile -t ghcr.io/your-org/hflow-backend:0.1.0 .
-docker build -f hflow-frontend/Dockerfile --build-arg NEXT_PUBLIC_API_URL=/api --build-arg BACKEND_INTERNAL_URL=http://hflow-backend:3000 -t ghcr.io/your-org/hflow-frontend:0.1.0 .
+docker build -f hflow-frontend/Dockerfile --build-arg NEXT_PUBLIC_API_URL=/api --build-arg NEXT_PUBLIC_ENABLE_PAYMENTS=false --build-arg BACKEND_INTERNAL_URL=http://hflow-backend:3000 -t ghcr.io/your-org/hflow-frontend:0.1.0 .
 docker push ghcr.io/your-org/hflow-backend:0.1.0
 docker push ghcr.io/your-org/hflow-frontend:0.1.0
 ```

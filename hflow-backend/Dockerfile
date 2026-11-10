@@ -16,6 +16,7 @@ FROM node:20-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
     PORT=3000 \
+    ENABLE_PAYMENTS=false \
     HOME=/home/node
 
 RUN apt-get update \

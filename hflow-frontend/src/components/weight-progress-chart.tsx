@@ -88,11 +88,11 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
     <div>
       <div className="mb-4 flex flex-wrap items-center gap-x-5 gap-y-2 text-xs">
         <span className="inline-flex items-center gap-2 text-white">
-          <span className="h-2 w-2 rounded-full bg-[#FF5500] shadow-[0_0_10px_#FF5500]" />
+          <span className="h-2 w-2 rounded-full bg-[#f97316] shadow-[0_0_10px_#f97316]" />
           Peso (kg)
         </span>
         <span className="inline-flex items-center gap-2 text-muted">
-          <span className="h-2 w-2 rounded-full bg-cyan-300 shadow-[0_0_10px_#67e8f9]" />
+          <span className="h-2 w-2 rounded-full bg-orange-300 shadow-[0_0_10px_#fdba74]" />
           Grasa corporal (%)
         </span>
       </div>
@@ -131,7 +131,7 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
                 </text>
                 {fatMeasurements.length > 0 && (
                   <text
-                    fill="#67e8f9"
+                    fill="#fdba74"
                     fontSize="12"
                     textAnchor="start"
                     x={WIDTH - RIGHT + 10}
@@ -148,7 +148,7 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
             d={weightPath}
             fill="none"
             filter="url(#weight-neon-glow)"
-            stroke="#FF5500"
+            stroke="#f97316"
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth="3"
@@ -157,7 +157,7 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
             <path
               d={fatPath}
               fill="none"
-              stroke="#67e8f9"
+              stroke="#fdba74"
               strokeLinecap="round"
               strokeLinejoin="round"
               strokeWidth="2"
@@ -171,7 +171,7 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
                 cy={y(checkIn.weight, minWeight, maxWeight)}
                 fill="#0D0F14"
                 r="4.5"
-                stroke="#FF5500"
+                stroke="#f97316"
                 strokeWidth="2.5"
               >
                 <title>
@@ -184,7 +184,7 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
                   cy={y(checkIn.bodyFat, minFat, maxFat)}
                   fill="#0D0F14"
                   r="3.5"
-                  stroke="#67e8f9"
+                  stroke="#fdba74"
                   strokeWidth="2"
                 >
                   <title>
@@ -211,10 +211,10 @@ export function WeightProgressChart({ checkIns }: WeightProgressChartProps) {
       </div>
       <p className="mt-2 text-xs text-muted">
         {chronological.length} {chronological.length === 1 ? "medición" : "mediciones"} ·{" "}
-        <span className="text-[#FF5500]">kg</span> eje izquierdo
+        <span className="text-[#f97316]">kg</span> eje izquierdo
         {fatMeasurements.length > 0 && (
           <>
-            {" "}· <span className="text-cyan-300">%</span> eje derecho
+            {" "}· <span className="text-orange-300">%</span> eje derecho
           </>
         )}
       </p>

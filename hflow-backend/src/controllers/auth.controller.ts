@@ -6,6 +6,7 @@ import logger from "../utils/logger";
 import { stripeService } from "../services/stripe.service";
 import { emailService } from "../services/email.service";
 import { prisma } from "../services/prisma.service";
+import { paymentsEnabled } from "../utils/featureFlags";
 
 const BCRYPT_ROUNDS = 12;
 const MAX_BCRYPT_PASSWORD_BYTES = 72;
@@ -70,38 +71,40 @@ export async function registerTrainer(request: Request, response: Response): Pro
         password: hashedPassword,
       },
     });
-    let customer: Awaited<ReturnType<typeof stripeService.createCustomer>> | undefined;
-    try {
-      customer = await stripeService.createCustomer({
-        trainerId: trainer.id,
-        email: trainer.email,
-        name: trainer.name,
-      });
-      await prisma.trainer.update({
-        where: { id: trainer.id },
-        data: { stripeCustomerId: customer.id },
-      });
-    } catch (error) {
+    if (paymentsEnabled()) {
+      let customer: Awaited<ReturnType<typeof stripeService.createCustomer>> | undefined;
       try {
-        await prisma.trainer.delete({ where: { id: trainer.id } });
-      } catch (cleanupError) {
-        logger.error("Trainer cleanup failed after Stripe registration error", {
+        customer = await stripeService.createCustomer({
           trainerId: trainer.id,
-          error: cleanupError,
+          email: trainer.email,
+          name: trainer.name,
         });
-      }
-      if (customer) {
+        await prisma.trainer.update({
+          where: { id: trainer.id },
+          data: { stripeCustomerId: customer.id },
+        });
+      } catch (error) {
         try {
-          await stripeService.deleteCustomer(customer.id);
+          await prisma.trainer.delete({ where: { id: trainer.id } });
         } catch (cleanupError) {
-          logger.error("Stripe customer cleanup failed after trainer registration error", {
+          logger.error("Trainer cleanup failed after Stripe registration error", {
             trainerId: trainer.id,
-            stripeCustomerId: customer.id,
             error: cleanupError,
           });
         }
+        if (customer) {
+          try {
+            await stripeService.deleteCustomer(customer.id);
+          } catch (cleanupError) {
+            logger.error("Stripe customer cleanup failed after trainer registration error", {
+              trainerId: trainer.id,
+              stripeCustomerId: customer.id,
+              error: cleanupError,
+            });
+          }
+        }
+        throw error;
       }
-      throw error;
     }
     const token = jwt.sign({ trainerId: trainer.id }, jwtSecret, {
       algorithm: "HS256",
@@ -127,6 +130,7 @@ export async function registerTrainer(request: Request, response: Response): Pro
           email: trainer.email,
           name: trainer.name,
           createdAt: trainer.createdAt,
+          is_beta_tester: trainer.isBetaTester,
         },
       },
     });
@@ -169,6 +173,39 @@ export async function loginTrainer(request: Request, response: Response): Promis
           email: trainer.email,
           name: trainer.name,
           createdAt: trainer.createdAt,
+          is_beta_tester: trainer.isBetaTester,
+        },
+      },
+    });
+  } catch (error) {
+    sendServerError(response, error);
+  }
+}
+
+export async function getCurrentTrainer(request: Request, response: Response): Promise<void> {
+  const trainerId = request.auth?.trainerId;
+  if (!trainerId) {
+    response.status(401).json({ error: { message: "Trainer authentication is required" } });
+    return;
+  }
+
+  try {
+    const trainer = await prisma.trainer.findUnique({
+      where: { id: trainerId },
+      select: { id: true, email: true, name: true, createdAt: true, isBetaTester: true },
+    });
+    if (!trainer) {
+      response.status(404).json({ error: { message: "Trainer not found" } });
+      return;
+    }
+    response.json({
+      data: {
+        trainer: {
+          id: trainer.id,
+          email: trainer.email,
+          name: trainer.name,
+          createdAt: trainer.createdAt,
+          is_beta_tester: trainer.isBetaTester,
         },
       },
     });

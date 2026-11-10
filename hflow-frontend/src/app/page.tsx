@@ -117,7 +117,7 @@ function ActivityMark() {
 function FeaturePreview({ type }: { type: string }) {
   if (type === "crm") {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-[#090a0d] p-4">
+      <div className="rounded-xl border border-white/[0.08] bg-[#080f1c] p-4">
         <div className="flex items-center justify-between border-b border-white/[0.07] pb-3">
           <div className="flex items-center gap-2 text-xs font-medium">
             <LayoutDashboard className="text-accent" size={15} />
@@ -157,7 +157,7 @@ function FeaturePreview({ type }: { type: string }) {
 
   if (type === "planner") {
     return (
-      <div className="rounded-xl border border-white/[0.08] bg-[#090a0d] p-4">
+      <div className="rounded-xl border border-white/[0.08] bg-[#080f1c] p-4">
         <div className="flex items-center gap-2 text-xs font-medium">
           <Sparkles className="text-accent" size={15} />
           Borrador de entrenamiento
@@ -184,7 +184,7 @@ function FeaturePreview({ type }: { type: string }) {
   }
 
   return (
-    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#090a0d] p-4">
+    <div className="relative overflow-hidden rounded-xl border border-white/[0.08] bg-[#080f1c] p-4">
       <div className="absolute -right-10 -top-12 h-36 w-36 rounded-full bg-orange-600/20 blur-3xl" />
       <div className="relative flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs font-medium">
@@ -195,7 +195,7 @@ function FeaturePreview({ type }: { type: string }) {
           MP4
         </span>
       </div>
-      <div className="relative mt-4 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-white/[0.06] bg-[radial-gradient(ellipse_at_55%_20%,rgba(255,85,0,0.28),transparent_52%),linear-gradient(145deg,#191919,#080808)]">
+      <div className="relative mt-4 flex aspect-[2/1] items-center justify-center overflow-hidden rounded-lg border border-white/[0.06] bg-[radial-gradient(ellipse_at_55%_20%,rgba(249,115,22,0.28),transparent_52%),linear-gradient(145deg,#0b1220,#080f1c)]">
         <div className="max-w-[200px] text-center">
           <p className="text-[9px] font-bold uppercase tracking-[0.25em] text-orange-300">
             H-FLOW · ENTRENA MEJOR
@@ -218,9 +218,11 @@ function FeaturePreview({ type }: { type: string }) {
 }
 
 export default function Home() {
+  const paymentsEnabled = process.env.NEXT_PUBLIC_ENABLE_PAYMENTS === "true";
+
   return (
-    <main className="overflow-hidden bg-[#050505] text-white">
-      <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(ellipse_at_48%_0%,rgba(255,85,0,0.11),transparent_42rem)]" />
+    <main className="overflow-hidden bg-[#030712] text-white">
+      <div className="pointer-events-none fixed inset-0 -z-0 bg-[radial-gradient(ellipse_at_48%_0%,rgba(249,115,22,0.11),transparent_42rem)]" />
       <div className="relative z-10">
         <header className="mx-auto flex w-full max-w-7xl items-center justify-between px-5 py-5 sm:px-8 lg:px-10">
           <Logo />
@@ -231,9 +233,11 @@ export default function Home() {
             <a className="text-sm text-gray-400 transition hover:text-white" href="#comparativa">
               El cambio
             </a>
-            <a className="text-sm text-gray-400 transition hover:text-white" href="#precios">
-              Precios
-            </a>
+            {paymentsEnabled && (
+              <a className="text-sm text-gray-400 transition hover:text-white" href="#precios">
+                Precios
+              </a>
+            )}
           </nav>
           <div className="flex items-center gap-3">
             <Link
@@ -243,7 +247,7 @@ export default function Home() {
               Iniciar sesión
             </Link>
             <Link
-              className="inline-flex items-center gap-2 rounded-lg bg-accent px-4 py-2.5 text-sm font-bold text-black transition hover:bg-orange-400"
+              className="inline-flex items-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2.5 text-sm font-bold text-[#030712] transition hover:brightness-110"
               href="/register"
             >
               Empieza gratis
@@ -255,7 +259,7 @@ export default function Home() {
         <section className="mx-auto grid w-full max-w-7xl items-center gap-14 px-5 pb-24 pt-16 sm:px-8 sm:pt-24 lg:grid-cols-[1.05fr_0.95fr] lg:gap-10 lg:px-10 lg:pb-32 lg:pt-28">
           <div>
             <div className="inline-flex items-center gap-2 rounded-full border border-accent/25 bg-accent/[0.07] px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.13em] text-orange-200">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_12px_#ff5500]" />
+              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_12px_#f97316]" />
               La plataforma para entrenadores que van en serio
             </div>
             <h1 className="mt-7 max-w-3xl text-[clamp(3.2rem,8vw,6.7rem)] font-black leading-[0.93] tracking-[-0.075em]">
@@ -271,7 +275,7 @@ export default function Home() {
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row">
               <Link
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-black shadow-[0_8px_40px_rgba(255,85,0,0.18)] transition hover:-translate-y-0.5 hover:bg-orange-400"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 text-sm font-bold text-[#030712] shadow-[0_8px_40px_rgba(249,115,22,0.18)] transition hover:-translate-y-0.5 hover:brightness-110"
                 href="/register"
               >
                 Empieza gratis
@@ -292,7 +296,7 @@ export default function Home() {
 
           <div className="relative mx-auto w-full max-w-xl">
             <div className="absolute -inset-8 rounded-[2rem] bg-accent/[0.09] blur-3xl" />
-            <div className="relative rounded-2xl border border-white/[0.1] bg-[#0d0f14]/95 p-4 shadow-2xl shadow-black/50 sm:p-5">
+            <div className="relative rounded-2xl border border-white/[0.1] bg-[#080f1c]/95 p-4 shadow-2xl shadow-black/50 sm:p-5">
               <div className="flex items-center justify-between border-b border-white/[0.07] pb-4">
                 <div className="flex items-center gap-2.5">
                   <span className="grid h-8 w-8 place-items-center rounded-lg bg-accent text-black">
@@ -353,7 +357,7 @@ export default function Home() {
                 <ArrowUpRight className="text-accent" size={15} />
               </div>
             </div>
-            <div className="absolute -bottom-5 -left-4 hidden items-center gap-2 rounded-xl border border-white/10 bg-[#151515] px-3.5 py-3 shadow-xl sm:flex">
+            <div className="absolute -bottom-5 -left-4 hidden items-center gap-2 rounded-xl border border-white/10 bg-[#0b1220] px-3.5 py-3 shadow-xl sm:flex">
               <span className="grid h-8 w-8 place-items-center rounded-lg bg-emerald-500/10 text-emerald-300">
                 <Check size={16} />
               </span>
@@ -364,7 +368,7 @@ export default function Home() {
 
         <section
           aria-labelledby="comparison-heading"
-          className="border-y border-white/[0.07] bg-[#0a0a0a] py-20 sm:py-24"
+          className="border-y border-white/[0.07] bg-[#030712] py-20 sm:py-24"
           id="comparativa"
         >
           <div className="mx-auto w-full max-w-7xl px-5 sm:px-8 lg:px-10">
@@ -382,7 +386,7 @@ export default function Home() {
               </h2>
             </div>
             <div className="mt-10 overflow-hidden rounded-2xl border border-white/[0.08]">
-              <div className="grid grid-cols-[1fr_1fr] bg-[#101010] sm:grid-cols-[1.1fr_1fr_1fr]">
+              <div className="grid grid-cols-[1fr_1fr] bg-[#080f1c] sm:grid-cols-[1.1fr_1fr_1fr]">
                 <div className="hidden p-4 sm:block" />
                 <div className="border-l border-white/[0.07] p-4 text-xs font-bold uppercase tracking-[0.14em] text-gray-500 sm:p-5">
                   Antes
@@ -440,7 +444,7 @@ export default function Home() {
           <div className="mt-10 grid gap-4 lg:grid-cols-3">
             {features.map(({ number, icon: Icon, title, description, detail, visual }) => (
               <article
-                className="group rounded-2xl border border-white/[0.08] bg-[#0d0f14] p-5 transition hover:-translate-y-1 hover:border-accent/30 sm:p-6"
+                className="group rounded-2xl border border-white/[0.08] bg-[#080f1c] p-5 transition hover:-translate-y-1 hover:border-accent/30 sm:p-6"
                 key={number}
               >
                 <div className="flex items-center justify-between">
@@ -461,9 +465,10 @@ export default function Home() {
           </div>
         </section>
 
+        {paymentsEnabled && (
         <section
           aria-labelledby="pricing-heading"
-          className="border-y border-white/[0.07] bg-[#0a0a0a] py-20 sm:py-24"
+          className="border-y border-white/[0.07] bg-[#030712] py-20 sm:py-24"
           id="precios"
         >
           <div className="mx-auto w-full max-w-5xl px-5 sm:px-8">
@@ -487,8 +492,8 @@ export default function Home() {
                 <article
                   className={`relative rounded-2xl border p-6 sm:p-8 ${
                     plan.featured
-                      ? "border-accent/50 bg-[linear-gradient(145deg,rgba(255,85,0,0.10),rgba(13,15,20,0.95)_48%)] shadow-[0_0_60px_rgba(255,85,0,0.08)]"
-                      : "border-white/[0.09] bg-[#0d0f14]"
+                      ? "border-accent/50 bg-[linear-gradient(145deg,rgba(249,115,22,0.10),rgba(8,15,28,0.95)_48%)] shadow-[0_0_60px_rgba(249,115,22,0.08)]"
+                      : "border-white/[0.09] bg-[#080f1c]"
                   }`}
                   key={plan.name}
                 >
@@ -511,7 +516,7 @@ export default function Home() {
                   <Link
                     className={`mt-6 inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl px-5 text-sm font-bold transition ${
                       plan.featured
-                        ? "bg-accent text-black hover:bg-orange-400"
+                        ? "bg-gradient-to-r from-orange-500 to-orange-600 text-[#030712] hover:brightness-110"
                         : "border border-white/10 bg-white/[0.04] text-white hover:bg-white/[0.08]"
                     }`}
                     href="/register"
@@ -535,10 +540,11 @@ export default function Home() {
             </p>
           </div>
         </section>
+        )}
 
         <section className="mx-auto w-full max-w-7xl px-5 py-20 sm:px-8 sm:py-24 lg:px-10">
-          <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-[#0d0f14] px-6 py-12 text-center sm:px-12 sm:py-16">
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_110%,rgba(255,85,0,0.18),transparent_60%)]" />
+          <div className="relative overflow-hidden rounded-3xl border border-accent/20 bg-[#080f1c] px-6 py-12 text-center sm:px-12 sm:py-16">
+            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_50%_110%,rgba(249,115,22,0.18),transparent_60%)]" />
             <div className="relative mx-auto max-w-2xl">
               <span className="mx-auto grid h-11 w-11 place-items-center rounded-xl bg-accent text-black">
                 <Dumbbell size={21} />
@@ -551,7 +557,7 @@ export default function Home() {
               </p>
               <div className="mt-7 flex flex-col justify-center gap-3 sm:flex-row">
                 <Link
-                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-accent px-6 text-sm font-bold text-black transition hover:bg-orange-400"
+                  className="inline-flex min-h-12 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-orange-500 to-orange-600 px-6 text-sm font-bold text-[#030712] transition hover:brightness-110"
                   href="/register"
                 >
                   Crear mi cuenta
@@ -581,7 +587,7 @@ export default function Home() {
       </div>
       <a
         aria-label="Volver arriba"
-        className="fixed bottom-5 right-5 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#151515] text-gray-300 shadow-lg transition hover:border-accent/40 hover:text-accent"
+        className="fixed bottom-5 right-5 z-20 grid h-10 w-10 place-items-center rounded-full border border-white/10 bg-[#0b1220] text-gray-300 shadow-lg transition hover:border-accent/40 hover:text-accent"
         href="#"
       >
         <ArrowDown className="rotate-180" size={16} />

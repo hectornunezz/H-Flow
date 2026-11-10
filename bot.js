@@ -153,7 +153,7 @@ async function renderVideo({ script, audio, captions, outputPath }) {
           "--codec=h264",
           "--crf=23",
           "--pixel-format=yuv420p",
-          "--concurrency=2",
+          "--concurrency=1",
           "--overwrite",
         ],
         { cwd: ROOT, stdio: ["ignore", "inherit", "pipe"] },

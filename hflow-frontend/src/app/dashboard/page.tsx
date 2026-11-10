@@ -407,7 +407,7 @@ export default function DashboardPage() {
             <p className="mt-1 text-xs text-muted">Cuando registres atletas, aparecerán aquí.</p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
+          <div className="max-w-full overflow-x-auto overscroll-x-contain">
             <table className="w-full min-w-[620px] text-left text-sm">
               <thead className="bg-white/[0.02] text-xs uppercase tracking-wide text-muted">
                 <tr>

@@ -6,6 +6,7 @@ import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
 import swaggerUi from "swagger-ui-express";
 import { authenticateToken } from "./middlewares/auth.middleware";
+import { requireBetaTester } from "./middlewares/betaAccess.middleware";
 import errorHandler from "./middlewares/errorHandler.middleware";
 import athleteRoutes from "./routes/athlete.routes";
 import athletePortalRoutes from "./routes/athletePortal.routes";
@@ -102,14 +103,14 @@ app.use(
 );
 app.use(express.json());
 app.use("/api/auth", authRoutes);
-app.use("/api/checkins", authenticateToken, checkInRoutes);
-app.use("/api/dashboard", authenticateToken, dashboardRoutes);
-app.use("/api/ai", authenticateToken, aiRoutes);
-app.use("/api/athletes", authenticateToken, athleteRoutes);
-app.use("/api/marketing", authenticateToken, marketingRoutes);
-app.use("/api/profile", authenticateToken, profileRoutes);
-app.use("/api/workouts", authenticateToken, workoutRoutes);
-app.use("/api/nutrition", authenticateToken, nutritionRoutes);
+app.use("/api/checkins", authenticateToken, requireBetaTester, checkInRoutes);
+app.use("/api/dashboard", authenticateToken, requireBetaTester, dashboardRoutes);
+app.use("/api/ai", authenticateToken, requireBetaTester, aiRoutes);
+app.use("/api/athletes", authenticateToken, requireBetaTester, athleteRoutes);
+app.use("/api/marketing", authenticateToken, requireBetaTester, marketingRoutes);
+app.use("/api/profile", authenticateToken, requireBetaTester, profileRoutes);
+app.use("/api/workouts", authenticateToken, requireBetaTester, workoutRoutes);
+app.use("/api/nutrition", authenticateToken, requireBetaTester, nutritionRoutes);
 
 app.get("/", (_request, response) => {
   response.json({ message: "H-Flow backend is running" });

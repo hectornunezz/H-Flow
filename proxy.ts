@@ -1,12 +1,13 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
 import { getAuthenticatedUserRole } from '@/utils/auth'
+import { paymentsEnabled } from '@/utils/features'
 
-function redirectToLogin(request: NextRequest, response: NextResponse) {
-  const loginUrl = request.nextUrl.clone()
-  loginUrl.pathname = '/login'
-  loginUrl.search = ''
-  const redirectResponse = NextResponse.redirect(loginUrl)
+function redirectTo(request: NextRequest, response: NextResponse, pathname: string) {
+  const redirectUrl = request.nextUrl.clone()
+  redirectUrl.pathname = pathname
+  redirectUrl.search = ''
+  const redirectResponse = NextResponse.redirect(redirectUrl)
 
   response.cookies.getAll().forEach((cookie) => {
     redirectResponse.cookies.set(cookie)
@@ -15,12 +16,24 @@ function redirectToLogin(request: NextRequest, response: NextResponse) {
   return redirectResponse
 }
 
+function redirectWithoutSession(request: NextRequest, pathname: string) {
+  const redirectUrl = request.nextUrl.clone()
+  redirectUrl.pathname = pathname
+  redirectUrl.search = ''
+  return NextResponse.redirect(redirectUrl)
+}
+
 export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPricingPage = pathname === '/pricing' || pathname.startsWith('/pricing/')
 
-  if (pathname === '/login' || isPricingPage) {
+  if (pathname === '/login' || pathname === '/beta-pending') {
     return NextResponse.next()
+  }
+  if (isPricingPage) {
+    return paymentsEnabled()
+      ? NextResponse.next()
+      : redirectWithoutSession(request, '/login')
   }
 
   let response = NextResponse.next({ request })
@@ -52,7 +65,7 @@ export async function proxy(request: NextRequest) {
     authenticatedUser = await getAuthenticatedUserRole(supabase)
   } catch (error) {
     if (error instanceof Error && error.message.includes('Auth session missing')) {
-      return redirectToLogin(request, response)
+      return redirectTo(request, response, '/login')
     }
 
     console.error(
@@ -68,7 +81,15 @@ export async function proxy(request: NextRequest) {
   }
 
   if (!authenticatedUser) {
-    return redirectToLogin(request, response)
+    return redirectTo(request, response, '/login')
+  }
+
+  if (!authenticatedUser.isBetaTester) {
+    return redirectTo(request, response, '/beta-pending')
+  }
+
+  if (!authenticatedUser.role) {
+    return redirectTo(request, response, '/login')
   }
 
   const isClientPortal = pathname === '/client-portal' || pathname.startsWith('/client-portal/')
@@ -82,17 +103,6 @@ export async function proxy(request: NextRequest) {
     redirectUrl.pathname = authenticatedUser.role === 'athlete' ? '/client-portal' : '/'
     redirectUrl.search = ''
     const redirectResponse = NextResponse.redirect(redirectUrl)
-    response.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie)
-    })
-    return redirectResponse
-  }
-
-  if (authenticatedUser.role === 'coach' && !authenticatedUser.isSubscribed) {
-    const pricingUrl = request.nextUrl.clone()
-    pricingUrl.pathname = '/pricing'
-    pricingUrl.search = ''
-    const redirectResponse = NextResponse.redirect(pricingUrl)
     response.cookies.getAll().forEach((cookie) => {
       redirectResponse.cookies.set(cookie)
     })

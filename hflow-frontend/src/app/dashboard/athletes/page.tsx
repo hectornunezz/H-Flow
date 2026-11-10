@@ -338,7 +338,7 @@ export default function AthletesPage() {
           </div>
         ) : (
           <>
-            <div className="overflow-x-auto">
+            <div className="max-w-full overflow-x-auto overscroll-x-contain">
               <table className="w-full min-w-[640px] text-left text-sm">
                 <thead className="bg-white/[0.02] text-xs uppercase tracking-wide text-muted">
                   <tr>

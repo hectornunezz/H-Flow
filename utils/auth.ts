@@ -4,8 +4,9 @@ export type UserRole = 'coach' | 'athlete'
 
 export interface AuthenticatedUserRole {
   id: string
-  role: UserRole
+  role: UserRole | null
   isSubscribed: boolean
+  isBetaTester: boolean
 }
 
 export async function getAuthenticatedUserRole(
@@ -23,7 +24,7 @@ export async function getAuthenticatedUserRole(
 
   const { data: profile, error: profileError } = await supabase
     .from('profiles')
-    .select('id, role, is_subscribed')
+    .select('id, role, is_subscribed, is_beta_tester')
     .eq('id', user.id)
     .maybeSingle()
 
@@ -31,11 +32,11 @@ export async function getAuthenticatedUserRole(
     throw new Error(`No se pudo verificar el rol: ${profileError.message}`)
   }
 
-  if (profile?.role !== 'coach' && profile?.role !== 'athlete') return null
   return {
     id: user.id,
-    role: profile.role,
-    isSubscribed: profile.is_subscribed === true,
+    role: profile?.role === 'coach' || profile?.role === 'athlete' ? profile.role : null,
+    isSubscribed: profile?.is_subscribed === true,
+    isBetaTester: profile?.is_beta_tester === true,
   }
 }
 

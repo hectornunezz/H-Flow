@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import { NextResponse } from 'next/server'
 import { createClient } from '@/utils/supabase/server'
+import { paymentsEnabled } from '@/utils/features'
 
 export const runtime = 'nodejs'
 
@@ -11,6 +12,10 @@ function getRequiredEnv(name: string): string {
 }
 
 export async function POST() {
+  if (!paymentsEnabled()) {
+    return NextResponse.json({ error: 'Payments are disabled during the closed beta.' }, { status: 503 })
+  }
+
   try {
     const supabase = await createClient()
     const {

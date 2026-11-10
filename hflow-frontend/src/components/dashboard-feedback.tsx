@@ -38,7 +38,7 @@ export function DashboardErrorState({
         </div>
       </div>
       <button
-        className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-accent/25 px-3 text-sm font-medium text-accent transition hover:border-accent/50 hover:bg-gradient-to-r from-[#f97316] to-[#ea580c]/10"
+        className="inline-flex min-h-9 shrink-0 items-center justify-center gap-2 rounded-lg border border-accent/25 px-3 text-sm font-medium text-accent transition hover:border-accent/50 hover:bg-accent/10"
         onClick={onRetry}
         type="button"
       >

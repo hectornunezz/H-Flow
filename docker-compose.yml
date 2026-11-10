@@ -53,6 +53,7 @@ services:
       INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN:-}
       INSTAGRAM_GRAPH_API_VERSION: ${INSTAGRAM_GRAPH_API_VERSION:-v22.0}
       STRIPE_SECRET_KEY: ${STRIPE_SECRET_KEY:-}
+      ENABLE_PAYMENTS: ${ENABLE_PAYMENTS:-false}
       STRIPE_WEBHOOK_SECRET: ${STRIPE_WEBHOOK_SECRET:-}
       STRIPE_PRO_PRICE_ID: ${STRIPE_PRO_PRICE_ID:-}
       STRIPE_SUCCESS_URL: ${STRIPE_SUCCESS_URL:-http://localhost:3001/billing/success}
@@ -89,6 +90,7 @@ services:
       dockerfile: hflow-frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
+        NEXT_PUBLIC_ENABLE_PAYMENTS: ${NEXT_PUBLIC_ENABLE_PAYMENTS:-false}
         BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:3000}
     restart: unless-stopped
     depends_on:

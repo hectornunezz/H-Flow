@@ -9,6 +9,7 @@ import { apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
 type AuthResponse = {
   data: {
     token: string;
+    trainer?: { is_beta_tester?: boolean };
   };
 };
 
@@ -47,7 +48,7 @@ export function AuthForm({ mode }: AuthFormProps) {
       }
 
       window.localStorage.setItem(TOKEN_STORAGE_KEY, result.data.token);
-      router.replace("/dashboard");
+      router.replace(result.data.trainer?.is_beta_tester === true ? "/dashboard" : "/beta-pending");
     } catch (requestError) {
       setError(
         requestError instanceof Error
@@ -148,7 +149,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
 
             <button
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSubmitting}
               type="submit"
             >

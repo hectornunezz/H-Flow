@@ -57,6 +57,7 @@ describe("POST /api/auth/login", () => {
     name: "Coach",
     password: "",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
+    isBetaTester: false,
   };
 
   beforeAll(async () => {
@@ -65,6 +66,7 @@ describe("POST /api/auth/login", () => {
   });
 
   beforeEach(() => {
+    process.env.ENABLE_PAYMENTS = "false";
     Object.values(mockPrisma.trainer).forEach((mock) => mock.mockReset());
     Object.values(mockStripeService).forEach((mock) => mock.mockReset());
     mockEmailService.sendWelcomeEmail.mockReset();
@@ -118,12 +120,13 @@ describe("POST /api/auth/login", () => {
     expect(mockPrisma.trainer.findUnique).not.toHaveBeenCalled();
   });
 
-  it("registers normalized trainer credentials, provisions billing, and returns a bearer token", async () => {
+  it("registers a pending beta trainer without contacting Stripe by default", async () => {
     const createdTrainer = {
       id: "trainer-2",
       email: "coach@example.com",
       name: "New Coach",
       createdAt: new Date("2026-02-01T00:00:00.000Z"),
+      isBetaTester: false,
     };
     mockPrisma.trainer.create.mockImplementation(async ({ data }) => ({
       ...createdTrainer,
@@ -131,8 +134,6 @@ describe("POST /api/auth/login", () => {
       name: data.name,
       password: data.password,
     }));
-    mockStripeService.createCustomer.mockResolvedValue({ id: "cus-1" });
-    mockPrisma.trainer.update.mockResolvedValue({});
     mockEmailService.sendWelcomeEmail.mockResolvedValue(undefined);
 
     const response = await request(app)
@@ -155,15 +156,9 @@ describe("POST /api/auth/login", () => {
     await expect(
       bcrypt.compare("strong-password", createCall.data.password),
     ).resolves.toBe(true);
-    expect(mockStripeService.createCustomer).toHaveBeenCalledWith({
-      trainerId: "trainer-2",
-      email: "coach@example.com",
-      name: "New Coach",
-    });
-    expect(mockPrisma.trainer.update).toHaveBeenCalledWith({
-      where: { id: "trainer-2" },
-      data: { stripeCustomerId: "cus-1" },
-    });
+    expect(response.body.data.trainer.is_beta_tester).toBe(false);
+    expect(mockStripeService.createCustomer).not.toHaveBeenCalled();
+    expect(mockPrisma.trainer.update).not.toHaveBeenCalled();
     expect(mockEmailService.sendWelcomeEmail).toHaveBeenCalledWith(
       "coach@example.com",
       "New Coach",
@@ -199,12 +194,14 @@ describe("POST /api/auth/login", () => {
   });
 
   it("rolls back a newly created trainer if billing provisioning fails", async () => {
+    process.env.ENABLE_PAYMENTS = "true";
     mockPrisma.trainer.create.mockResolvedValue({
       id: "trainer-3",
       email: "coach@example.com",
       name: "Coach",
       password: "hashed-password",
       createdAt: new Date(),
+      isBetaTester: false,
     });
     mockStripeService.createCustomer.mockRejectedValue(new Error("Stripe unavailable"));
     mockPrisma.trainer.delete.mockResolvedValue({});

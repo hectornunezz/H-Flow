@@ -162,7 +162,7 @@ export default function ModularBuilder({ exercises, onChange }: ModularBuilderPr
             />
             <button
               aria-label={`Eliminar ejercicio ${exercise.name || exerciseIndex + 1}`}
-              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-gradient-to-r from-[#f97316] to-[#ea580c]/10 hover:text-accent"
+              className="grid h-8 w-8 shrink-0 place-items-center rounded-lg text-muted transition hover:bg-accent/10 hover:text-accent"
               disabled={exercises.length <= 1}
               onClick={() =>
                 onChange(exercises.filter((current) => current.id !== exercise.id))
@@ -234,7 +234,7 @@ export default function ModularBuilder({ exercises, onChange }: ModularBuilderPr
                     </select>
                     <button
                       aria-label={`Eliminar serie ${setIndex + 1}`}
-                      className="grid h-8 w-8 place-items-center rounded-md text-muted transition hover:bg-gradient-to-r from-[#f97316] to-[#ea580c]/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
+                      className="grid h-8 w-8 place-items-center rounded-md text-muted transition hover:bg-accent/10 hover:text-accent disabled:cursor-not-allowed disabled:opacity-30"
                       disabled={exercise.sets.length <= 1}
                       onClick={() =>
                         updateExercise(exercise.id, (current) => ({
@@ -250,7 +250,7 @@ export default function ModularBuilder({ exercises, onChange }: ModularBuilderPr
                 ))}
               </div>
               <button
-                className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-accent transition hover:bg-gradient-to-r from-[#f97316] to-[#ea580c]/10"
+                className="mt-2 inline-flex h-8 items-center gap-1.5 rounded-md px-2 text-xs font-medium text-accent transition hover:bg-accent/10"
                 onClick={() =>
                   updateExercise(exercise.id, (current) => ({
                     ...current,

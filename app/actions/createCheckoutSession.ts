@@ -3,6 +3,7 @@
 import Stripe from 'stripe'
 import { redirect } from 'next/navigation'
 import { createClient } from '@/utils/supabase/server'
+import { paymentsEnabled } from '@/utils/features'
 
 function getRequiredEnv(name: string): string {
   const value = process.env[name]
@@ -11,6 +12,10 @@ function getRequiredEnv(name: string): string {
 }
 
 export async function createCheckoutSession(): Promise<void> {
+  if (!paymentsEnabled()) {
+    throw new Error('Los pagos están desactivados durante la beta cerrada.')
+  }
+
   let checkoutUrl: string
 
   try {

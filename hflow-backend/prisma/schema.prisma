@@ -13,6 +13,7 @@ model Trainer {
   password                     String
   name                         String
   avatarUrl                    String?
+  isBetaTester                 Boolean            @default(false) @map("is_beta_tester")
   createdAt                    DateTime           @default(now())
   stripeCustomerId             String?            @unique
   stripeSubscriptionId         String?            @unique
