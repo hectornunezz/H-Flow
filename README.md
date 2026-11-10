@@ -30,8 +30,9 @@ docker compose up --build
 - API documentation: <http://localhost:3000/api-docs>
 
 Docker Compose runs Prisma migrations before starting the API and persists
-PostgreSQL data and backend uploads, logs, and marketing media in named
-volumes. The frontend calls the API through its same-origin `/api` proxy;
+PostgreSQL data and backend uploads, logs, marketing media, and private workout
+videos in named volumes. Workout videos are served through authenticated API
+routes and are not exposed as public static files. The frontend calls the API through its same-origin `/api` proxy;
 the browser does not need to resolve the backend container hostname.
 
 Local smoke test (PowerShell, from the repository root):
@@ -53,6 +54,18 @@ Set `DATABASE_URL` to your PostgreSQL instance and configure a strong
 `JWT_SECRET`. Optional integrations such as OpenAI, ElevenLabs, Stripe, SMTP,
 and Instagram can be configured as needed. Set `MARKETING_MEDIA_PUBLIC_URL` to
 an HTTPS address reachable by Instagram to publish Reels.
+Marketing audio uses the configured ElevenLabs voice and multilingual model.
+Set `ELEVENLABS_VOICE_ID` and `ELEVENLABS_API_KEY`; the example environment
+files include defaults for Spanish, MP3 quality, and natural voice settings.
+ElevenLabs character timestamps drive the Remotion captions directly, avoiding
+a separate transcription step and keeping subtitles on the generated audio.
+For strict manual one-video generation, run `npm run marketing:manual` from an
+interactive terminal. `bot.js` requires typing `GENERAR`, prints the exact
+script character count, and enforces a persistent local budget initialized at
+38,000 characters. The local ledger covers only calls made by this script;
+reconcile it manually if the ElevenLabs balance changes elsewhere.
+Set `WORKOUT_VIDEO_STORAGE_DIR` to persistent storage for report videos; the
+default is `storage/workout-videos`.
 
 Configure the frontend API URL:
 
@@ -127,21 +140,32 @@ for manual rendering instructions.
 
 ## Kubernetes
 
-The manifests in [`k8s/`](./k8s/) target a managed PostgreSQL database. The
-Prisma schema and checked-in migration history use PostgreSQL; data in an
-existing SQLite `dev.db` must be backed up and migrated separately before
-switching environments.
+The manifests in [`k8s/`](./k8s/) deploy PostgreSQL inside the `hflow`
+namespace as a single-replica StatefulSet behind a private ClusterIP Service.
+The backend and migration Job use the same `DATABASE_URL` from
+`hflow-secrets`; its hostname must match the `hflow-postgres` Service. The
+database PVC must use a persistent storage class. Data in an existing SQLite
+`dev.db` must be backed up and migrated separately before switching environments.
 
 The frontend image must be built with `NEXT_PUBLIC_API_URL=/api` and
 `BACKEND_INTERNAL_URL=http://hflow-backend:3000`. Next.js then proxies API,
 upload, and marketing-media requests through the same origin. Kubernetes
 `ClusterIP` addresses are private and must never be embedded as browser-facing
-API URLs.
+API URLs. The Next.js rewrite destination is serialized at image-build time;
+the frontend Deployment ConfigMap must match the service URL used for the
+image build. The backend's persistent storage mount includes private workout
+videos under `storage/workout-videos`; keep a persistent volume attached when
+deploying so uploaded series remain available across restarts.
 
-Before deploying, replace `your-org` and the example hostname in the manifests,
-configure a managed PostgreSQL instance and storage class, and set
-`DB_HOST`, `DB_NAME`, and `DB_USER` in `k8s/configmap.yaml`. Create an ignored
-local copy of the secret template and enter real credentials there:
+The backend writes structured JSON logs to stdout and the existing log files.
+`/healthz` is the liveness check, `/health/ready` checks PostgreSQL readiness,
+and `/metrics` exposes Prometheus process and HTTP request metrics. The backend
+pod includes Prometheus scrape annotations for port `3000`.
+
+Before deploying, replace `your-org` and the example frontend hostname,
+configure a persistent storage class, and create an ignored local copy of the
+secret template. Set the same URL-safe PostgreSQL password in `POSTGRES_PASSWORD`
+and `DATABASE_URL`, and replace `JWT_SECRET` with a strong random secret:
 
 ```powershell
 Copy-Item k8s\secret.example.yaml k8s\secret.yaml
@@ -164,6 +188,8 @@ kubectl apply -f k8s/namespace.yaml
 kubectl apply -f k8s/configmap.yaml
 kubectl apply -f k8s/secret.yaml
 kubectl apply -f k8s/storage.yaml
+kubectl apply -f k8s/postgres.yaml
+kubectl rollout status statefulset/hflow-postgres -n hflow --timeout=5m
 kubectl delete job hflow-migrate -n hflow --ignore-not-found
 kubectl apply -f k8s/migration-job.yaml
 kubectl wait --for=condition=complete job/hflow-migrate -n hflow --timeout=10m

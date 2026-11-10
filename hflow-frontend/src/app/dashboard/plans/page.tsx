@@ -13,6 +13,15 @@ import {
   UserRound,
 } from "lucide-react";
 import { ApiError, apiDownload, apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
+import {
+  DashboardErrorState,
+  DashboardSkeleton,
+} from "@/components/dashboard-feedback";
+import ModularBuilder, {
+  createModularExercise,
+  formatModularExercises,
+  type ModularExercise,
+} from "@/components/modular-builder";
 
 type Athlete = {
   id: string;
@@ -64,6 +73,9 @@ export default function PlansPage() {
   const [planType, setPlanType] = useState<PlanType>("workout");
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
+  const [exercises, setExercises] = useState<ModularExercise[]>(() => [
+    createModularExercise(),
+  ]);
   const [scheduledAt, setScheduledAt] = useState("");
   const [nutritionDetails, setNutritionDetails] = useState("");
   const [calories, setCalories] = useState("");
@@ -125,6 +137,12 @@ export default function PlansPage() {
       return;
     }
 
+    const modularDescription = formatModularExercises(exercises);
+    if (planType === "workout" && !modularDescription) {
+      setFormError("Añade al menos un ejercicio al constructor modular.");
+      return;
+    }
+
     setIsCreating(true);
     try {
       if (planType === "workout") {
@@ -133,7 +151,9 @@ export default function PlansPage() {
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
             title: title.trim(),
-            description: description.trim(),
+            description: [modularDescription, description.trim()]
+              .filter(Boolean)
+              .join("\n\n"),
             athleteId: selectedAthleteId,
             ...(scheduledAt ? { scheduledAt: new Date(scheduledAt).toISOString() } : {}),
           }),
@@ -141,6 +161,7 @@ export default function PlansPage() {
         setWorkouts((current) => [response.data, ...current]);
         setTitle("");
         setDescription("");
+        setExercises([createModularExercise()]);
         setScheduledAt("");
       } else {
         const response = await apiFetch<DataResponse<NutritionPlan>>("/nutrition", {
@@ -262,22 +283,14 @@ export default function PlansPage() {
       </header>
 
       {error && (
-        <div
-          aria-live="polite"
-          className="mt-6 flex items-center justify-between gap-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-          role="alert"
-        >
-          <span>{error}</span>
-          <button
-            className="shrink-0 font-medium text-white hover:text-accent"
-            onClick={() => {
+        <div className="mt-6">
+          <DashboardErrorState
+            message={error}
+            onRetry={() => {
               const controller = new AbortController();
               void loadData(controller.signal);
             }}
-            type="button"
-          >
-            Reintentar
-          </button>
+          />
         </div>
       )}
 
@@ -397,16 +410,17 @@ export default function PlansPage() {
                     value={title}
                   />
                 </div>
+                <ModularBuilder exercises={exercises} onChange={setExercises} />
                 <div>
                   <label className="mb-1.5 block text-sm font-medium" htmlFor="workout-description">
-                    Descripción y ejercicios
+                    Notas e indicaciones{" "}
+                    <span className="font-normal text-muted">(opcional)</span>
                   </label>
                   <textarea
                     className="min-h-32 w-full resize-y rounded-lg border border-line bg-black/20 px-3 py-2.5 text-sm outline-none focus:border-accent"
                     id="workout-description"
                     onChange={(event) => setDescription(event.target.value)}
-                    placeholder={"Lunes: sentadilla 4x8, press banca 4x10...\nIncluye descansos y notas."}
-                    required
+                    placeholder={"Descansos, tempo, calentamiento y otras indicaciones..."}
                     value={description}
                   />
                 </div>
@@ -459,7 +473,7 @@ export default function PlansPage() {
             {formError && (
               <p
                 aria-live="polite"
-                className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300"
+                className="rounded-lg border border-accent/20 bg-accent/[0.06] px-3 py-2.5 text-sm text-accent-hover"
                 role="alert"
               >
                 {formError}
@@ -472,7 +486,7 @@ export default function PlansPage() {
             )}
 
             <button
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isCreating || isLoading || athletes.length === 0}
               type="submit"
             >
@@ -496,7 +510,21 @@ export default function PlansPage() {
               <span className="text-xs text-muted">{filteredWorkouts.length}</span>
             </header>
             {isLoading ? (
-              <p className="px-5 py-8 text-center text-sm text-muted">Cargando rutinas...</p>
+              <div aria-label="Cargando rutinas" className="space-y-4 p-5" role="status">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div className="flex items-center justify-between gap-4" key={index}>
+                    <div className="flex-1 space-y-2">
+                      <DashboardSkeleton className="h-3 w-2/3" />
+                      <DashboardSkeleton className="h-3 w-1/3" />
+                    </div>
+                    <DashboardSkeleton className="h-9 w-16 rounded-lg" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <p className="px-5 py-8 text-center text-sm text-muted">
+                No se pudieron cargar las rutinas. Reintenta la solicitud.
+              </p>
             ) : filteredWorkouts.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted">
                 No hay rutinas para este atleta.
@@ -544,7 +572,19 @@ export default function PlansPage() {
               <span className="text-xs text-muted">{filteredNutritionPlans.length}</span>
             </header>
             {isLoading ? (
-              <p className="px-5 py-8 text-center text-sm text-muted">Cargando planes...</p>
+              <div aria-label="Cargando planes nutricionales" className="space-y-4 p-5" role="status">
+                {Array.from({ length: 3 }, (_, index) => (
+                  <div className="space-y-2" key={index}>
+                    <DashboardSkeleton className="h-3 w-full" />
+                    <DashboardSkeleton className="h-3 w-4/5" />
+                    <DashboardSkeleton className="h-3 w-1/3" />
+                  </div>
+                ))}
+              </div>
+            ) : error ? (
+              <p className="px-5 py-8 text-center text-sm text-muted">
+                No se pudieron cargar los planes nutricionales. Reintenta la solicitud.
+              </p>
             ) : filteredNutritionPlans.length === 0 ? (
               <p className="px-5 py-8 text-center text-sm text-muted">
                 No hay planes nutricionales para este atleta.

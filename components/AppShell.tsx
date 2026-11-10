@@ -85,7 +85,7 @@ export default function AppShell({
 
   return (
     /* Viewport completo — no scroll en el shell, scroll dentro del main */
-    <div className="flex h-dvh overflow-hidden bg-slate-950">
+    <div className="flex h-dvh overflow-hidden bg-[#030712]">
 
       {/* ═══════════════════════════════════════════════════════════════════
           SIDEBAR — solo desktop (lg+)
@@ -99,7 +99,7 @@ export default function AppShell({
           </div>
           <div>
             <p className="font-black text-sm tracking-wider text-white leading-none">H-FLOW</p>
-            <p className="text-[9px] font-bold text-[#FF5A00] uppercase tracking-widest mt-0.5">Coach Studio</p>
+            <p className="text-[9px] font-bold text-[#f97316] uppercase tracking-widest mt-0.5">Coach Studio</p>
           </div>
         </div>
 
@@ -115,7 +115,7 @@ export default function AppShell({
                   'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium',
                   'transition-all duration-150 group',
                   isActive
-                    ? 'bg-[#FF5A00]/10 text-[#FF5A00] border border-[#FF5A00]/20'
+                    ? 'bg-gradient-to-r from-[#f97316] to-[#ea580c] text-[#030712] border border-[#f97316]/20 shadow-sm shadow-orange-950/30'
                     : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/50 border border-transparent',
                 ].join(' ')}
               >
@@ -125,7 +125,7 @@ export default function AppShell({
                   <span className={[
                     'text-[10px] font-black px-1.5 py-0.5 rounded-md min-w-[20px] text-center',
                     isActive
-                      ? 'bg-[#FF5A00]/20 text-[#FF5A00]'
+                      ? 'bg-[#f97316]/20 text-[#f97316]'
                       : 'bg-slate-800 text-slate-400',
                   ].join(' ')}>
                     {badge}
@@ -139,7 +139,7 @@ export default function AppShell({
         {/* User chip */}
         <div className="px-3 pb-4 shrink-0">
           <div className="flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-800/40 border border-slate-700/50">
-            <div className="w-7 h-7 shrink-0 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/20 flex items-center justify-center text-[10px] font-black text-[#FF5A00]">
+            <div className="w-7 h-7 shrink-0 rounded-lg bg-[#f97316]/10 border border-[#f97316]/20 flex items-center justify-center text-[10px] font-black text-[#f97316]">
               {user.name.substring(0, 2).toUpperCase()}
             </div>
             <div className="min-w-0">
@@ -177,7 +177,7 @@ export default function AppShell({
                 </span>
               )}
             </div>
-            <div className="w-7 h-7 rounded-lg bg-[#FF5A00]/10 border border-[#FF5A00]/20 flex items-center justify-center text-[10px] font-black text-[#FF5A00]">
+            <div className="w-7 h-7 rounded-lg bg-[#f97316]/10 border border-[#f97316]/20 flex items-center justify-center text-[10px] font-black text-[#f97316]">
               {user.name.substring(0, 2).toUpperCase()}
             </div>
           </div>
@@ -205,18 +205,18 @@ export default function AppShell({
                   onClick={() => setActive(id)}
                   className={[
                     'relative flex flex-col items-center gap-1 flex-1 py-1.5 rounded-xl transition-all duration-150',
-                    isActive ? 'text-[#FF5A00]' : 'text-slate-500 hover:text-slate-300',
+                    isActive ? 'text-[#f97316]' : 'text-slate-500 hover:text-slate-300',
                   ].join(' ')}
                 >
                   {/* Indicador activo */}
                   {isActive && (
-                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-[#FF5A00]" />
+                    <span className="absolute top-0 left-1/2 -translate-x-1/2 w-6 h-0.5 rounded-full bg-[#f97316]" />
                   )}
 
                   <div className="relative">
                     <Icon className="w-5 h-5" aria-hidden />
                     {badge !== undefined && badge > 0 && (
-                      <span className="absolute -top-1 -right-1.5 bg-[#FF5A00] text-white text-[8px] font-black rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5 leading-none">
+                      <span className="absolute -top-1 -right-1.5 bg-[#f97316] text-white text-[8px] font-black rounded-full min-w-[14px] h-3.5 flex items-center justify-center px-0.5 leading-none">
                         {badge > 99 ? '99+' : badge}
                       </span>
                     )}

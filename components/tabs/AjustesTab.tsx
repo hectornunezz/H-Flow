@@ -52,7 +52,7 @@ function Toggle({
         aria-label={label}
         onClick={onChange}
         className={`relative h-6 w-11 shrink-0 rounded-full transition ${
-          checked ? 'bg-[#FF5A00]' : 'bg-slate-700'
+          checked ? 'bg-[#f97316]' : 'bg-slate-700'
         }`}
       >
         <span
@@ -82,7 +82,7 @@ export default function AjustesTab({ user }: Props) {
   return (
     <div className="mx-auto max-w-3xl space-y-6">
       <header>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Configuración
         </p>
         <h2 className="mt-1 text-xl font-black text-white sm:text-2xl">Ajustes</h2>
@@ -108,7 +108,7 @@ export default function AjustesTab({ user }: Props) {
                     setSaved(false)
                   }}
                   required
-                  className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 pl-10 pr-3 text-sm text-white outline-none transition focus:border-[#FF5A00]"
+                  className="h-11 w-full rounded-xl border border-slate-700 bg-slate-950 pl-10 pr-3 text-sm text-white outline-none transition focus:border-[#f97316]"
                 />
               </div>
             </label>
@@ -121,7 +121,7 @@ export default function AjustesTab({ user }: Props) {
                   setSaved(false)
                 }}
                 placeholder="Ej. Preparación física"
-                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-[#FF5A00]"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-[#f97316]"
               />
             </label>
             <label className="text-xs font-semibold text-slate-300 sm:col-span-2">
@@ -134,14 +134,14 @@ export default function AjustesTab({ user }: Props) {
                   setSaved(false)
                 }}
                 placeholder="correo@ejemplo.com"
-                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-[#FF5A00]"
+                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none transition placeholder:text-slate-600 focus:border-[#f97316]"
               />
             </label>
           </div>
           <div className="flex flex-wrap items-center gap-3 pt-1">
             <button
               type="submit"
-              className="inline-flex items-center gap-2 rounded-xl bg-[#FF5A00] px-4 py-2.5 text-xs font-bold text-white transition hover:bg-[#ff6a1a]"
+              className="inline-flex items-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 py-2.5 text-xs font-bold text-[#030712] transition hover:brightness-110"
             >
               <Save aria-hidden="true" className="h-3.5 w-3.5" />
               Guardar cambios

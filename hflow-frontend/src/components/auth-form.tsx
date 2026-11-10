@@ -148,7 +148,7 @@ export function AuthForm({ mode }: AuthFormProps) {
             )}
 
             <button
-              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSubmitting}
               type="submit"
             >

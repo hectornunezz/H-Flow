@@ -4,11 +4,13 @@ WORKDIR /app/hflow-backend
 
 COPY hflow-backend/package.json hflow-backend/package-lock.json ./
 COPY hflow-backend/prisma ./prisma
-RUN npm ci
+RUN npm ci --no-audit --no-fund
 
 COPY hflow-backend/tsconfig.json ./
 COPY hflow-backend/src ./src
-RUN npx prisma generate && npm run build
+RUN npx prisma generate \
+    && npm run build \
+    && test -s dist/index.js
 
 FROM node:20-bookworm-slim AS runtime
 
@@ -49,7 +51,8 @@ WORKDIR /app/hflow-backend
 
 COPY hflow-backend/package.json hflow-backend/package-lock.json ./
 COPY hflow-backend/prisma ./prisma
-RUN npm ci --omit=dev
+RUN npm ci --omit=dev --no-audit --no-fund \
+    && npx prisma generate
 
 COPY --from=build /app/hflow-backend/dist ./dist
 COPY src/remotion /app/hflow-backend/src/remotion
@@ -57,7 +60,7 @@ RUN mkdir -p logs uploads storage/marketing/videos /app/video-generador/public/a
     && chown -R node:node /app/hflow-backend /app/video-generador /home/node
 
 USER node
-RUN npm exec remotion -- browser ensure
+RUN ./node_modules/.bin/remotion browser ensure
 
 EXPOSE 3000
 

@@ -24,7 +24,7 @@ export default function BibliotecaTab({ exercises }: Props) {
 
       {/* ── Header ── */}
       <div>
-        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Catálogo
         </h2>
         <p className="text-lg sm:text-xl font-black text-white mt-1">
@@ -66,17 +66,17 @@ export default function BibliotecaTab({ exercises }: Props) {
               name="name"
               placeholder="Nombre (ej. Sentadilla Búlgara)"
               required
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner"
             />
             <input
               type="text"
               name="muscle_group"
               placeholder="Grupo muscular (ej. Cuádriceps)"
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner"
             />
             <select
               name="equipment"
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner"
             >
               <option value="Barra">Barra (Barbell)</option>
               <option value="Mancuernas">Mancuernas (Dumbbell)</option>
@@ -86,7 +86,7 @@ export default function BibliotecaTab({ exercises }: Props) {
             </select>
             <select
               name="difficulty"
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner"
             >
               <option value="Principiante">Principiante</option>
               <option value="Intermedio">Intermedio</option>
@@ -96,11 +96,11 @@ export default function BibliotecaTab({ exercises }: Props) {
               type="url"
               name="video_url"
               placeholder="URL del vídeo (YouTube, Drive...)"
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner sm:col-span-2"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner sm:col-span-2"
             />
             <button
               type="submit"
-              className="sm:col-span-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold py-3 rounded-xl transition-all shadow-lg shadow-blue-600/20 active:scale-95"
+              className="sm:col-span-2 bg-gradient-to-r from-[#f97316] to-[#ea580c] hover:brightness-110 text-[#030712] text-xs font-semibold py-3 rounded-xl transition-all shadow-lg shadow-orange-950/30 active:scale-95"
             >
               Registrar en la Biblioteca
             </button>

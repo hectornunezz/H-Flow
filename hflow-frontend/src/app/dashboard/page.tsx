@@ -14,6 +14,10 @@ import {
   Users,
 } from "lucide-react";
 import { ApiError, apiDownload, apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
+import {
+  DashboardErrorState,
+  DashboardSkeleton,
+} from "@/components/dashboard-feedback";
 
 type Athlete = {
   id: string;
@@ -77,6 +81,7 @@ export default function DashboardPage() {
   const [stats, setStats] = useState<DashboardStats["data"] | null>(null);
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [retentionAlerts, setRetentionAlerts] = useState<RetentionAlert[]>([]);
   const [retentionError, setRetentionError] = useState("");
   const [isRetentionLoading, setIsRetentionLoading] = useState(true);
@@ -85,6 +90,10 @@ export default function DashboardPage() {
 
   useEffect(() => {
     const controller = new AbortController();
+    setIsLoading(true);
+    setIsRetentionLoading(true);
+    setError("");
+    setRetentionError("");
 
     async function loadStats() {
       try {
@@ -135,7 +144,7 @@ export default function DashboardPage() {
     void loadStats();
     void loadRetentionAlerts();
     return () => controller.abort();
-  }, []);
+  }, [reloadKey]);
 
   const growth = stats?.growth.percentage ?? null;
   const isPositiveGrowth = growth !== null && growth >= 0;
@@ -197,25 +206,21 @@ export default function DashboardPage() {
       </header>
 
       {exportError && (
-        <p aria-live="polite" className="mt-4 text-sm text-red-300" role="alert">
-          {exportError}
-        </p>
+        <div className="mt-4">
+          <DashboardErrorState
+            title="No se pudo exportar el informe"
+            message={exportError}
+            onRetry={() => void exportMonthlyReport()}
+          />
+        </div>
       )}
 
       {error && (
-        <div
-          aria-live="polite"
-          className="mt-7 flex items-center justify-between gap-4 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
-          role="alert"
-        >
-          <span>{error}</span>
-          <button
-            className="shrink-0 font-medium text-white hover:text-accent"
-            onClick={() => window.location.reload()}
-            type="button"
-          >
-            Reintentar
-          </button>
+        <div className="mt-7">
+          <DashboardErrorState
+            message={error}
+            onRetry={() => setReloadKey((value) => value + 1)}
+          />
         </div>
       )}
 
@@ -228,7 +233,13 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="mt-6 text-4xl font-semibold tracking-tight">
-            {isLoading ? <span className="text-muted">—</span> : (stats?.activeAthletes ?? 0)}
+            {isLoading ? (
+              <DashboardSkeleton className="h-10 w-20" />
+            ) : error ? (
+              <span className="text-muted">—</span>
+            ) : (
+              stats?.activeAthletes ?? 0
+            )}
           </p>
           <p className="mt-2 text-xs text-muted">Atletas activos en tu equipo</p>
         </article>
@@ -241,8 +252,12 @@ export default function DashboardPage() {
             </span>
           </div>
           <p className="mt-6 text-4xl font-semibold tracking-tight">
-            {isLoading || growth === null ? (
-              <span className={isLoading ? "text-muted" : "text-2xl"}>{isLoading ? "—" : "N/D"}</span>
+            {isLoading ? (
+              <DashboardSkeleton className="h-10 w-24" />
+            ) : error ? (
+              <span className="text-muted">—</span>
+            ) : growth === null ? (
+              <span className="text-2xl text-muted">N/D</span>
             ) : (
               <span className={isPositiveGrowth ? "text-emerald-400" : "text-orange-300"}>
                 {new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 }).format(growth)}%
@@ -256,7 +271,11 @@ export default function DashboardPage() {
               ) : (
                 <ArrowDownRight size={14} className="text-orange-300" />
               ))}
-            {isLoading ? "Calculando variación" : formatPercentage(growth)}
+            {isLoading
+              ? "Calculando variación"
+              : error
+                ? "Datos no disponibles"
+                : formatPercentage(growth)}
           </p>
         </article>
       </section>
@@ -287,11 +306,25 @@ export default function DashboardPage() {
         </header>
 
         {retentionError ? (
-          <p aria-live="polite" className="px-5 py-8 text-sm text-red-300" role="alert">
-            {retentionError}
-          </p>
+          <div className="p-5">
+            <DashboardErrorState
+              title="No se pudieron cargar las alertas"
+              message={retentionError}
+              onRetry={() => setReloadKey((value) => value + 1)}
+            />
+          </div>
         ) : isRetentionLoading ? (
-          <p className="px-5 py-8 text-center text-sm text-muted">Revisando actividad de atletas...</p>
+          <div aria-label="Revisando actividad de atletas" className="space-y-4 p-5 sm:p-6" role="status">
+            {Array.from({ length: 3 }, (_, index) => (
+              <div className="flex items-center justify-between gap-4" key={index}>
+                <div className="flex-1 space-y-2">
+                  <DashboardSkeleton className="h-3 w-36" />
+                  <DashboardSkeleton className="h-5 w-48 max-w-full rounded-full" />
+                </div>
+                <DashboardSkeleton className="h-3 w-20" />
+              </div>
+            ))}
+          </div>
         ) : retentionAlerts.length === 0 ? (
           <div className="flex items-center gap-3 px-5 py-8 sm:px-6">
             <CheckCircle2 className="shrink-0 text-emerald-400" size={20} />
@@ -354,9 +387,19 @@ export default function DashboardPage() {
         </div>
 
         {error ? (
-          <div className="px-5 py-12 text-center text-sm text-muted">No se pudieron cargar los atletas.</div>
+          <div className="px-5 py-8 text-sm text-muted">
+            Reintenta la carga del resumen para volver a consultar los atletas.
+          </div>
         ) : isLoading ? (
-          <div className="px-5 py-12 text-center text-sm text-muted">Cargando atletas...</div>
+          <div aria-label="Cargando atletas recientes" className="space-y-4 p-5 sm:p-6" role="status">
+            {Array.from({ length: 4 }, (_, index) => (
+              <div className="flex items-center gap-4" key={index}>
+                <DashboardSkeleton className="h-9 w-9 shrink-0 rounded-full" />
+                <DashboardSkeleton className="h-3 w-1/3" />
+                <DashboardSkeleton className="ml-auto h-3 w-24" />
+              </div>
+            ))}
+          </div>
         ) : !stats?.recentAthletes.length ? (
           <div className="px-5 py-12 text-center">
             <Users className="mx-auto text-muted" size={24} />

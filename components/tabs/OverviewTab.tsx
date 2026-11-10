@@ -27,7 +27,7 @@ interface StatCardProps {
 }
 
 const COLOR_MAP: Record<ColorKey, string> = {
-  orange:  'bg-[#FF5A00]/10  border-[#FF5A00]/20  text-[#FF5A00]',
+  orange:  'bg-[#f97316]/10  border-[#f97316]/20  text-[#f97316]',
   blue:    'bg-blue-500/10   border-blue-500/20   text-blue-400',
   purple:  'bg-purple-500/10 border-purple-500/20 text-purple-400',
   emerald: 'bg-emerald-500/10 border-emerald-500/20 text-emerald-400',
@@ -74,7 +74,7 @@ export default function OverviewTab({
 
       {/* ── Greeting ── */}
       <div>
-        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Command Center
         </h2>
         <p className="text-lg sm:text-xl font-black text-white mt-1">

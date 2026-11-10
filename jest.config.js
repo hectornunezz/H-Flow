@@ -1,6 +1,7 @@
 module.exports = {
   clearMocks: true,
   moduleDirectories: ["node_modules", "<rootDir>/hflow-backend/node_modules"],
+  moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
   modulePathIgnorePatterns: ["<rootDir>/hflow-frontend/.next/"],
   testEnvironment: "node",
   testMatch: ["<rootDir>/tests/**/*.test.ts"],

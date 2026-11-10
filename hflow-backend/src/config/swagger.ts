@@ -100,13 +100,13 @@ const definition = {
       },
       MarketingGenerateInput: {
         type: "object",
-        required: ["batchSize", "topic", "audience", "tone"],
+        required: ["topic", "audience", "tone"],
+        additionalProperties: false,
         properties: {
-          batchSize: { type: "integer", minimum: 1, maximum: 10 },
-          topic: { type: "string" },
-          audience: { type: "string" },
-          tone: { type: "string" },
-          durationSeconds: { type: "number", exclusiveMinimum: 0 },
+          topic: { type: "string", minLength: 1, maxLength: 300 },
+          audience: { type: "string", minLength: 1, maxLength: 200 },
+          tone: { type: "string", minLength: 1, maxLength: 120 },
+          durationSeconds: { type: "number", minimum: 5, maximum: 60 },
         },
       },
     },
@@ -258,6 +258,118 @@ const definition = {
         responses: { "201": response("Plan creado."), "400": response("Datos no válidos."), "404": response("Atleta no encontrado.") },
       },
     },
+    "/api/workouts/{id}/clone": {
+      post: {
+        tags: ["workouts"],
+        summary: "Clonar microciclo para la semana siguiente",
+        description: "Crea un plan nuevo vinculado al original; conserva la prescripción y avanza la fecha siete días sin modificar el histórico.",
+        security: secured,
+        parameters: [idParameter()],
+        responses: {
+          "201": response("Microciclo clonado."),
+          "401": response("No autenticado."),
+          "404": response("Plan no encontrado."),
+        },
+      },
+    },
+    "/api/workouts/reports": {
+      get: {
+        tags: ["workouts"],
+        summary: "Comparativa de RIR pautado y ejecución real",
+        security: secured,
+        parameters: [{ name: "athleteId", in: "query", schema: { type: "string" } }],
+        responses: {
+          "200": response("Registros de series con plan y atleta."),
+          "401": response("No autenticado."),
+        },
+      },
+    },
+    "/api/workouts/reports/sets": {
+      post: {
+        tags: ["workouts"],
+        summary: "Registrar una serie en el hub de reportes",
+        security: secured,
+        requestBody: jsonBody({
+          type: "object",
+          required: ["workoutPlanId", "exercise", "setNumber", "targetRir"],
+          properties: {
+            workoutPlanId: { type: "string" },
+            exercise: { type: "string", maxLength: 120 },
+            setNumber: { type: "integer", minimum: 1, maximum: 50 },
+            targetRir: { type: "number", minimum: 0, maximum: 10 },
+          },
+        }),
+        responses: {
+          "201": response("Serie añadida al informe."),
+          "400": response("Datos no válidos."),
+          "404": response("Plan no encontrado."),
+        },
+      },
+    },
+    "/api/workouts/reports/sets/{setId}": {
+      patch: {
+        tags: ["workouts"],
+        summary: "Actualizar kilos y RIR reales de una serie",
+        security: secured,
+        parameters: [idParameter("setId")],
+        requestBody: jsonBody({
+          type: "object",
+          minProperties: 1,
+          properties: {
+            actualRir: { type: "number", minimum: 0, maximum: 10, nullable: true },
+            actualKg: { type: "number", minimum: 0, maximum: 1000, nullable: true },
+          },
+        }),
+        responses: {
+          "200": response("Ejecución actualizada."),
+          "400": response("Datos no válidos."),
+          "404": response("Serie no encontrada."),
+        },
+      },
+    },
+    "/api/workouts/reports/sets/{setId}/video": {
+      get: {
+        tags: ["workouts"],
+        summary: "Reproducir el vídeo privado de una serie",
+        security: secured,
+        parameters: [idParameter("setId")],
+        responses: {
+          "200": {
+            description: "Vídeo de la ejecución.",
+            content: {
+              "video/mp4": { schema: { type: "string", format: "binary" } },
+              "video/webm": { schema: { type: "string", format: "binary" } },
+              "video/quicktime": { schema: { type: "string", format: "binary" } },
+            },
+          },
+          "404": response("Vídeo no encontrado."),
+        },
+      },
+      post: {
+        tags: ["workouts"],
+        summary: "Subir o reemplazar el vídeo de una serie efectiva",
+        security: secured,
+        parameters: [idParameter("setId")],
+        requestBody: {
+          required: true,
+          content: {
+            "multipart/form-data": {
+              schema: {
+                type: "object",
+                required: ["video"],
+                properties: { video: { type: "string", format: "binary" } },
+              },
+            },
+          },
+        },
+        responses: {
+          "200": response("Vídeo guardado."),
+          "400": response("Formato de vídeo no admitido."),
+          "404": response("Serie no encontrada."),
+          "413": response("El vídeo supera 100 MB."),
+        },
+      },
+    },
     "/api/workouts/{id}": {
       get: {
         tags: ["workouts"],
@@ -344,10 +456,10 @@ const definition = {
     "/api/marketing/generate": {
       post: {
         tags: ["marketing"],
-        summary: "Generar vídeos de marketing",
+        summary: "Generar un único vídeo de marketing bajo demanda",
         security: secured,
         requestBody: jsonBody({ $ref: "#/components/schemas/MarketingGenerateInput" }),
-        responses: { "201": response("Vídeos generados."), "400": response("Datos no válidos."), "502": response("Falló la generación.") },
+        responses: { "201": response("Reel generado con subtítulos y CTA."), "400": response("Datos no válidos."), "401": response("No autenticado."), "502": response("Falló la generación.") },
       },
     },
     "/api/marketing/schedule": {

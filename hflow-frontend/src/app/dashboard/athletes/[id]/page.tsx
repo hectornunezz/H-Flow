@@ -15,6 +15,10 @@ import {
 } from "lucide-react";
 import { ApiError, apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
 import { WeightProgressChart } from "@/components/weight-progress-chart";
+import {
+  DashboardErrorState,
+  DashboardSkeleton,
+} from "@/components/dashboard-feedback";
 
 type Athlete = {
   id: string;
@@ -60,6 +64,7 @@ export default function AthleteDetailPage() {
   const [objective, setObjective] = useState("");
   const [currentWeight, setCurrentWeight] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [reloadKey, setReloadKey] = useState(0);
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState("");
   const [saveMessage, setSaveMessage] = useState("");
@@ -106,7 +111,7 @@ export default function AthleteDetailPage() {
 
     void loadAthlete();
     return () => controller.abort();
-  }, [athleteId]);
+  }, [athleteId, reloadKey]);
 
   async function saveMetrics(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -190,20 +195,40 @@ export default function AthleteDetailPage() {
 
   if (isLoading) {
     return (
-      <div className="grid min-h-[50vh] place-items-center">
-        <LoaderCircle aria-label="Cargando perfil" className="animate-spin text-accent" size={26} />
+      <div aria-label="Cargando perfil del atleta" className="space-y-6" role="status">
+        <DashboardSkeleton className="h-4 w-32" />
+        <section className="flex items-center gap-4 rounded-2xl border border-line bg-card p-5 sm:p-6">
+          <DashboardSkeleton className="h-14 w-14 shrink-0 rounded-2xl" />
+          <div className="min-w-0 flex-1 space-y-3">
+            <DashboardSkeleton className="h-3 w-28" />
+            <DashboardSkeleton className="h-7 w-2/3" />
+            <DashboardSkeleton className="h-3 w-1/3" />
+          </div>
+        </section>
+        <section className="rounded-2xl border border-line bg-card p-5 sm:p-6">
+          <DashboardSkeleton className="h-5 w-44" />
+          <DashboardSkeleton className="mt-3 h-3 w-72 max-w-full" />
+          <DashboardSkeleton className="mt-6 h-56 w-full rounded-xl" />
+        </section>
+        <div className="grid gap-5 xl:grid-cols-2">
+          <DashboardSkeleton className="h-64 rounded-2xl" />
+          <DashboardSkeleton className="h-64 rounded-2xl" />
+        </div>
       </div>
     );
   }
 
   if (error && !athlete) {
     return (
-      <section className="rounded-2xl border border-red-500/20 bg-red-500/[0.06] p-6">
-        <p className="text-sm text-red-300">{error}</p>
-        <Link className="mt-4 inline-flex text-sm text-white hover:text-accent" href="/dashboard/athletes">
+      <div className="space-y-4">
+        <DashboardErrorState
+          message={error}
+          onRetry={() => setReloadKey((value) => value + 1)}
+        />
+        <Link className="inline-flex text-sm text-muted transition hover:text-accent" href="/dashboard/athletes">
           Volver a atletas
         </Link>
-      </section>
+      </div>
     );
   }
 
@@ -256,7 +281,7 @@ export default function AthleteDetailPage() {
           </p>
         </div>
         <button
-          className="mt-4 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-accent px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:opacity-60 sm:mt-0"
+          className="mt-4 inline-flex min-h-10 shrink-0 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 py-2.5 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:opacity-60 sm:mt-0"
           disabled={isCreatingPortalAccess}
           onClick={() => void createPortalAccess()}
           type="button"
@@ -295,7 +320,7 @@ export default function AthleteDetailPage() {
       </section>
 
       {error && (
-        <p aria-live="polite" className="mt-6 rounded-lg border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300" role="alert">
+        <p aria-live="polite" className="mt-6 rounded-lg border border-accent/20 bg-accent/[0.06] px-4 py-3 text-sm text-accent-hover" role="alert">
           {error}
         </p>
       )}
@@ -418,7 +443,7 @@ export default function AthleteDetailPage() {
             )}
 
             <button
-              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isSaving}
               type="submit"
             >

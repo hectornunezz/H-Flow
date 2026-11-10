@@ -1,5 +1,4 @@
-// eslint-disable-next-line @typescript-eslint/no-require-imports
-const nextEnv: typeof import('@next/env') = require('@next/env')
+import nextEnv from '@next/env'
 
 nextEnv.loadEnvConfig(process.cwd())
 
@@ -7,7 +6,7 @@ const requiredVariables = [
   'NEXT_PUBLIC_SUPABASE_URL',
   'SUPABASE_SERVICE_ROLE_KEY',
   'GROQ_API_KEY',
-] as const
+]
 
 const missingVariables = requiredVariables.filter((name) => !process.env[name]?.trim())
 

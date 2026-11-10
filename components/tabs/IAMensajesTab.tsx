@@ -13,7 +13,7 @@ export default function IAMensajesTab() {
 
       {/* Header */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF5A00]">Núcleo IA</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f97316]">Núcleo IA</p>
         <h2 className="text-xl sm:text-2xl font-black text-white mt-1">IA & Mensajes</h2>
         <p className="text-xs text-slate-400 mt-1">
           Pipeline de transcripción y estructuración automática desde WhatsApp.
@@ -23,15 +23,15 @@ export default function IAMensajesTab() {
       {/* Contenedor glassmorphic provisional */}
       <div className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl p-8 sm:p-12 flex flex-col items-center justify-center gap-4 text-center min-h-[280px]">
         <div className="relative">
-          <div className="w-16 h-16 rounded-2xl bg-[#FF5A00]/10 border border-[#FF5A00]/20 flex items-center justify-center">
-            <AudioLines className="w-8 h-8 text-[#FF5A00]" />
+          <div className="w-16 h-16 rounded-2xl bg-[#f97316]/10 border border-[#f97316]/20 flex items-center justify-center">
+            <AudioLines className="w-8 h-8 text-[#f97316]" />
           </div>
           {/* Pulse ring */}
-          <span className="absolute inset-0 rounded-2xl animate-ping bg-[#FF5A00]/10" />
+          <span className="absolute inset-0 rounded-2xl animate-ping bg-[#f97316]/10" />
         </div>
         <div className="space-y-1.5">
           <h3 className="text-base font-bold text-white flex items-center gap-2 justify-center">
-            <Zap className="w-4 h-4 text-[#FF5A00]" />
+            <Zap className="w-4 h-4 text-[#f97316]" />
             Centro de Inteligencia
           </h3>
           <p className="text-xs text-slate-500 max-w-xs leading-relaxed">

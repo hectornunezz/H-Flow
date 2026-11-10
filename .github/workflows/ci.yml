@@ -1,18 +1,16 @@
 name: CI
 
 on:
+  pull_request:
   push:
 
 permissions:
   contents: read
 
 jobs:
-  backend:
-    name: Backend
+  tests-and-builds:
+    name: Tests and application builds
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: hflow-backend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -22,51 +20,80 @@ jobs:
         with:
           node-version: 20
           cache: npm
-          cache-dependency-path: hflow-backend/package-lock.json
+          cache-dependency-path: |
+            package-lock.json
+            hflow-backend/package-lock.json
+            hflow-frontend/package-lock.json
 
-      - name: Install dependencies
+      - name: Install root dependencies
         run: npm ci
+
+      - name: Install backend dependencies
+        run: npm ci --prefix hflow-backend
+
+      - name: Install frontend dependencies
+        run: npm ci --prefix hflow-frontend
 
       - name: Generate Prisma client
-        run: npx prisma generate
+        run: npm --prefix hflow-backend run prisma:generate
 
-      - name: Typecheck backend
-        run: npm run typecheck
+      - name: Run unit tests
+        run: npm test -- --runInBand
 
-      - name: Build backend
-        run: npm run build
+      - name: Typecheck and build backend
+        run: |
+          npm --prefix hflow-backend run typecheck
+          npm --prefix hflow-backend run build
 
-      - name: Test backend
-        run: npm test
+      - name: Lint, typecheck, and build frontend
+        run: |
+          npm --prefix hflow-frontend run lint
+          npm --prefix hflow-frontend run typecheck
+          npm --prefix hflow-frontend run build
 
-  frontend:
-    name: Frontend
+  docker-images:
+    name: Build optimized Docker images
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: hflow-frontend
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: backend
+            file: hflow-backend/Dockerfile
+            image: hflow-backend
+          - name: frontend
+            file: hflow-frontend/Dockerfile
+            image: hflow-frontend
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build ${{ matrix.name }} image
+        uses: docker/build-push-action@v6
         with:
-          node-version: 20
-          cache: npm
-          cache-dependency-path: hflow-frontend/package-lock.json
+          context: .
+          file: ${{ matrix.file }}
+          push: false
+          tags: hflow/${{ matrix.image }}:${{ github.sha }}
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          build-args: |
+            NEXT_PUBLIC_API_URL=/api
+            BACKEND_INTERNAL_URL=http://hflow-backend:3000
 
-      - name: Install dependencies
-        run: npm ci
+  kubernetes-manifests:
+    name: Validate Kubernetes manifests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-      - name: Lint frontend
-        run: npm run lint
-
-      - name: Test frontend
-        run: npm test
-
-      - name: Typecheck frontend
-        run: npm run typecheck
-
-      - name: Build frontend
-        run: npm run build
+      - name: Validate manifests with kubeconform
+        run: |
+          docker run --rm \
+            -v "$GITHUB_WORKSPACE/k8s:/manifests:ro" \
+            ghcr.io/yannh/kubeconform:v0.6.7 \
+            -strict -summary /manifests

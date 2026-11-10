@@ -18,7 +18,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
 
       {/* ── Header ── */}
       <div>
-        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Arquitectura
         </h2>
         <p className="text-lg sm:text-xl font-black text-white mt-1">
@@ -43,14 +43,14 @@ export default function RutinasTab({ workouts, exercises }: Props) {
               name="title"
               placeholder="Título (ej. Hipertrofia — Tren Superior A)"
               required
-              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner w-full"
+              className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner w-full"
             />
             <div className="flex flex-col sm:flex-row gap-3">
               <input
                 type="text"
                 name="description"
                 placeholder="Notas de enfoque (opcional)"
-                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors shadow-inner flex-1"
+                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#f97316] transition-colors shadow-inner flex-1"
               />
               <button
                 type="submit"
@@ -152,7 +152,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                       <select
                         name="exercise_id"
                         required
-                        className="bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors w-full min-h-9 shadow-inner"
+                        className="bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors w-full min-h-9 shadow-inner"
                       >
                         <option value="">Selecciona ejercicio de la biblioteca...</option>
                         {exercises.map((ex) => (
@@ -169,7 +169,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                             name="sets"
                             defaultValue="3"
                             min="1"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#FF5A00]"
+                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
                           />
                         </div>
                         <div className="space-y-1">
@@ -178,7 +178,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                             type="text"
                             name="reps"
                             defaultValue="10"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#FF5A00]"
+                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
                           />
                         </div>
                         <div className="space-y-1">
@@ -189,7 +189,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                             defaultValue="2"
                             min="0"
                             max="5"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#FF5A00]"
+                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
                           />
                         </div>
                         <div className="space-y-1">

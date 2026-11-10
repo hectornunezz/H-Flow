@@ -1,37 +1,39 @@
 import { createReadStream } from "node:fs";
+import { randomUUID } from "node:crypto";
 import { stat } from "node:fs/promises";
 import path from "node:path";
 import type { Request, Response } from "express";
-import { getMarketingVideoDirectory } from "../services/marketingScheduler.service";
+import {
+  generateEpisode,
+  getMarketingVideoDirectory,
+} from "../services/marketingScheduler.service";
 import { prisma } from "../services/prisma.service";
-import { videoMarketingService } from "../services/videoMarketing.service";
 import logger from "../utils/logger";
-
-const MAX_BATCH_SIZE = 10;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
-export async function generateMarketingVideos(
+export async function generateMarketingVideo(
   request: Request,
   response: Response,
 ): Promise<void> {
+  const trainerId = request.auth?.trainerId;
+  if (!trainerId) {
+    response.status(401).json({ error: { message: "Authentication is required" } });
+    return;
+  }
+
   const body: unknown = request.body;
   if (!isRecord(body)) {
     response.status(400).json({ error: { message: "A valid JSON object is required" } });
     return;
   }
 
-  const { batchSize, topic, audience, tone, durationSeconds } = body;
-  if (
-    typeof batchSize !== "number" ||
-    !Number.isInteger(batchSize) ||
-    batchSize < 1 ||
-    batchSize > MAX_BATCH_SIZE
-  ) {
+  const { topic, audience, tone, durationSeconds } = body;
+  if ("batchSize" in body) {
     response.status(400).json({
-      error: { message: `batchSize must be an integer between 1 and ${MAX_BATCH_SIZE}` },
+      error: { message: "batchSize is no longer supported; generate one video per request" },
     });
     return;
   }
@@ -39,13 +41,16 @@ export async function generateMarketingVideos(
   if (
     typeof topic !== "string" ||
     !topic.trim() ||
+    topic.trim().length > 300 ||
     typeof audience !== "string" ||
     !audience.trim() ||
+    audience.trim().length > 200 ||
     typeof tone !== "string" ||
-    !tone.trim()
+    !tone.trim() ||
+    tone.trim().length > 120
   ) {
     response.status(400).json({
-      error: { message: "topic, audience, and tone are required non-empty strings" },
+      error: { message: "topic (max 300), audience (max 200), and tone (max 120) are required" },
     });
     return;
   }
@@ -54,37 +59,67 @@ export async function generateMarketingVideos(
     durationSeconds !== undefined &&
     (typeof durationSeconds !== "number" ||
       !Number.isFinite(durationSeconds) ||
-      durationSeconds <= 0)
+      durationSeconds < 5 ||
+      durationSeconds > 60)
   ) {
     response.status(400).json({
-      error: { message: "durationSeconds must be a positive number" },
+      error: { message: "durationSeconds must be a number between 5 and 60" },
     });
     return;
   }
 
+  const normalizedTopic = topic.trim().replace(/\s+/g, " ");
+  const episodeId = randomUUID();
   try {
-    const videos = [];
-    for (let index = 0; index < batchSize; index += 1) {
-      const assets = await videoMarketingService.createMarketingAssets({
-        topic: topic.trim(),
+    const episode = await prisma.marketingEpisode.create({
+      data: {
+        id: episodeId,
+        trainerId,
+        topic: normalizedTopic,
+        topicKey: `${normalizedTopic.normalize("NFKC").toLowerCase()}-${randomUUID()}`,
         audience: audience.trim(),
         tone: tone.trim(),
-        ...(durationSeconds === undefined ? {} : { durationSeconds }),
-      });
+        status: "generating",
+      },
+    });
 
-      videos.push({
-        script: assets.script,
-        audioBase64: assets.audio.toString("base64"),
-        audioContentType: "audio/mpeg",
-        transcription: assets.transcription,
-      });
+    await generateEpisode(episode.id, {
+      publishToInstagram: false,
+      ...(durationSeconds === undefined ? {} : { durationSeconds }),
+    });
+    const generatedEpisode = await prisma.marketingEpisode.findUnique({
+      where: { id: episode.id },
+    });
+    if (!generatedEpisode || generatedEpisode.status !== "completed") {
+      response.status(502).json({ error: { message: "Video generation failed" } });
+      return;
     }
 
-    response.status(201).json({ data: { batchSize: videos.length, videos } });
+    response.status(201).json({
+      data: {
+        id: generatedEpisode.id,
+        topic: generatedEpisode.topic,
+        audience: generatedEpisode.audience,
+        tone: generatedEpisode.tone,
+        scheduledAt: generatedEpisode.scheduledAt,
+        status: generatedEpisode.status,
+        script: generatedEpisode.script,
+        transcription: generatedEpisode.transcription
+          ? JSON.parse(generatedEpisode.transcription)
+          : null,
+        audioUrl: generatedEpisode.audioFileName
+          ? `/api/marketing/episodes/${generatedEpisode.id}/audio`
+          : null,
+        videoUrl: `/api/marketing/episodes/${generatedEpisode.id}/video`,
+        errorMessage: generatedEpisode.errorMessage,
+        createdAt: generatedEpisode.createdAt,
+        completedAt: generatedEpisode.completedAt,
+      },
+    });
   } catch (error) {
-    logger.error("Marketing video batch generation failed", { error });
+    logger.error("On-demand marketing video generation failed", { trainerId, error });
     response.status(502).json({
-      error: { message: "Video generation failed; no complete batch was produced" },
+      error: { message: "Video generation failed" },
     });
   }
 }

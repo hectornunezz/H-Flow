@@ -145,16 +145,20 @@ export default function MarketingPage() {
     setIsScheduling(true);
 
     try {
-      const response = await apiFetch<ScheduleResponse>("/marketing/schedule", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          topic: topic.trim(),
-          audience: audience.trim(),
-          tone: tone.trim(),
-          ...(scheduledAt ? { scheduledAt: new Date(scheduledAt).toISOString() } : {}),
-        }),
-      });
+      const isImmediate = !scheduledAt;
+      const response = await apiFetch<ScheduleResponse>(
+        isImmediate ? "/marketing/generate" : "/marketing/schedule",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            topic: topic.trim(),
+            audience: audience.trim(),
+            tone: tone.trim(),
+            ...(scheduledAt ? { scheduledAt: new Date(scheduledAt).toISOString() } : {}),
+          }),
+        },
+      );
 
       setEpisodes((current) => [
         response.data,
@@ -164,7 +168,11 @@ export default function MarketingPage() {
       setAudience("");
       setTone("");
       setScheduledAt("");
-      setSuccess("El Reel quedó programado correctamente.");
+      setSuccess(
+        isImmediate
+          ? "El Reel se generó correctamente con subtítulos y llamada a la acción."
+          : "El Reel quedó programado correctamente.",
+      );
     } catch (requestError) {
       if (requestError instanceof ApiError && requestError.status === 401) {
         window.localStorage.removeItem(TOKEN_STORAGE_KEY);
@@ -278,7 +286,7 @@ export default function MarketingPage() {
             Marketing Studio
           </h1>
           <p className="mt-2 text-sm text-muted">
-            Programa Reels y sigue su generación desde un solo lugar.
+            Genera un Reel ahora o programa su creación para más adelante.
           </p>
         </div>
         <button
@@ -312,9 +320,9 @@ export default function MarketingPage() {
             <Sparkles size={19} />
           </span>
           <div>
-            <h2 className="font-semibold">Programar un Reel</h2>
+            <h2 className="font-semibold">Crear un Reel</h2>
             <p className="mt-1 text-sm text-muted">
-              Describe el contenido y se generará automáticamente.
+              Sin fecha, se renderiza ahora un único vídeo con subtítulos y CTA.
             </p>
           </div>
         </header>
@@ -375,14 +383,13 @@ export default function MarketingPage() {
               <input
                 className="h-11 w-full rounded-lg border border-line bg-black/20 pl-10 pr-3 text-sm text-muted outline-none transition focus:border-accent"
                 id="reel-schedule"
-                min={new Date(Date.now() + 60_000).toISOString().slice(0, 16)}
                 onChange={(event) => setScheduledAt(event.target.value)}
                 type="datetime-local"
                 value={scheduledAt}
               />
             </div>
             <p className="mt-1 text-xs text-muted">
-              Si no eliges fecha, el proceso comienza de inmediato.
+              Si no eliges fecha, el Reel se genera bajo demanda.
             </p>
           </div>
           <div className="flex flex-col justify-end gap-3">
@@ -401,7 +408,7 @@ export default function MarketingPage() {
               </p>
             )}
             <button
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
               disabled={isScheduling}
               type="submit"
             >
@@ -410,7 +417,13 @@ export default function MarketingPage() {
               ) : (
                 <Plus size={17} />
               )}
-              {isScheduling ? "Programando..." : "Programar Reel"}
+              {isScheduling
+                ? scheduledAt
+                  ? "Programando..."
+                  : "Generando Reel..."
+                : scheduledAt
+                  ? "Programar Reel"
+                  : "Generar Reel"}
             </button>
           </div>
         </form>

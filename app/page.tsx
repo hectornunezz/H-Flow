@@ -1,6 +1,7 @@
 import { createClient } from '@/utils/supabase/server'
 import { redirect } from 'next/navigation'
 import AppShell from '@/components/AppShell'
+import type { AssignedWorkoutRecord, ProfileRecord } from '@/types'
 
 export default async function Home() {
   const supabase = await createClient()
@@ -37,8 +38,8 @@ export default async function Home() {
         email: user.email,
         name: user.email?.split('@')[0] || 'Coach',
       }}
-      athleteCount={safeProfiles.filter((p: any) => p.role === 'athlete').length}
-      pendingCount={safeAssignedWorkouts.filter((a: any) => !a.completed).length}
+      athleteCount={safeProfiles.filter((profile: ProfileRecord) => profile.role === 'athlete').length}
+      pendingCount={safeAssignedWorkouts.filter((workout: AssignedWorkoutRecord) => !workout.completed).length}
       workoutCount={safeWorkouts.length}
       exerciseCount={safeExercises.length}
       profiles={safeProfiles}

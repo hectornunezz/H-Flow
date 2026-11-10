@@ -3,13 +3,18 @@ import { spawn } from "node:child_process";
 import { existsSync } from "node:fs";
 import path from "node:path";
 import { prisma } from "./prisma.service";
-import { videoMarketingService } from "./videoMarketing.service";
+import {
+  TRAINER_CALL_TO_ACTION,
+  videoMarketingService,
+  type Transcription,
+} from "./videoMarketing.service";
 import { instagramService } from "./instagram.service";
 import logger from "../utils/logger";
 
 const POLL_INTERVAL_MS = 10_000;
-const MAX_EPISODES_PER_POLL = 5;
+const MAX_EPISODES_PER_POLL = 1;
 const repositoryRoot = path.resolve(__dirname, "../../..");
+let generationQueue: Promise<void> = Promise.resolve();
 
 export function getMarketingStorageDirectory(): string {
   return path.resolve(
@@ -30,11 +35,12 @@ export function getRemotionPublicDirectory(): string {
   );
 }
 
-async function renderMarketingVideo(
+export async function renderMarketingVideo(
   script: string,
   audioFileName: string,
   publicDirectory: string,
   outputPath: string,
+  transcription: Transcription,
 ): Promise<void> {
   const backendRoot = path.resolve(__dirname, "../..");
   const backendEntryPoint = path.join(backendRoot, "src", "remotion", "index.ts");
@@ -51,6 +57,11 @@ async function renderMarketingVideo(
   const props = JSON.stringify({
     text: script,
     audioSrc: `audio/${audioFileName}`,
+    captions:
+      transcription.words.length > 0
+        ? transcription.words.map(({ word, start, end }) => ({ text: word, start, end }))
+        : transcription.segments.map(({ text, start, end }) => ({ text, start, end })),
+    callToAction: TRAINER_CALL_TO_ACTION,
   });
   const propsPath = `${outputPath}.props.json`;
   await writeFile(propsPath, props, { flag: "wx" });
@@ -67,6 +78,9 @@ async function renderMarketingVideo(
           `--props=${propsPath}`,
           `--public-dir=${publicDirectory}`,
           "--codec=h264",
+          "--crf=23",
+          "--pixel-format=yuv420p",
+          "--concurrency=2",
           "--overwrite",
         ],
         { cwd: backendRoot, stdio: ["ignore", "ignore", "pipe"] },
@@ -94,85 +108,119 @@ async function renderMarketingVideo(
   }
 }
 
-async function generateEpisode(episodeId: string): Promise<void> {
-  const episode = await prisma.marketingEpisode.findUnique({ where: { id: episodeId } });
-  if (!episode) {
-    throw new Error(`Scheduled marketing episode ${episodeId} no longer exists`);
-  }
-
+async function serializeGeneration<T>(task: () => Promise<T>): Promise<T> {
+  const previous = generationQueue;
+  let release!: () => void;
+  generationQueue = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await previous;
   try {
-    const assets = await videoMarketingService.createMarketingAssets({
-      topic: episode.topic,
-      audience: episode.audience,
-      tone: episode.tone,
-    });
+    return await task();
+  } finally {
+    release();
+  }
+}
 
-    const storageDirectory = getMarketingStorageDirectory();
-    const audioFileName = `${episode.id}.mp3`;
-    const destination = path.join(storageDirectory, audioFileName);
-    const temporaryFile = `${destination}.tmp`;
-    const videoDirectory = getMarketingVideoDirectory();
-    const videoFileName = `${episode.id}.mp4`;
-    const videoDestination = path.join(videoDirectory, videoFileName);
-    const temporaryVideo = path.join(videoDirectory, `${episode.id}.tmp.mp4`);
-    const publicDirectory = getRemotionPublicDirectory();
-    const publicAudioDirectory = path.join(publicDirectory, "audio");
-    const publicAudioPath = path.join(publicAudioDirectory, audioFileName);
-    await mkdir(storageDirectory, { recursive: true });
-    await mkdir(videoDirectory, { recursive: true });
-    await mkdir(publicAudioDirectory, { recursive: true });
+export async function generateEpisode(
+  episodeId: string,
+  options: { publishToInstagram?: boolean; durationSeconds?: number } = {},
+): Promise<void> {
+  await serializeGeneration(async () => {
+    const episode = await prisma.marketingEpisode.findUnique({ where: { id: episodeId } });
+    if (!episode) {
+      throw new Error(`Marketing episode ${episodeId} no longer exists`);
+    }
 
     try {
-      await writeFile(temporaryFile, assets.audio, { flag: "wx" });
-      await rename(temporaryFile, destination);
-      await copyFile(destination, publicAudioPath);
-      try {
-        await renderMarketingVideo(assets.script, audioFileName, publicDirectory, temporaryVideo);
-      } finally {
-        await rm(publicAudioPath, { force: true });
-      }
-      await rename(temporaryVideo, videoDestination);
-      await prisma.marketingEpisode.update({
-        where: { id: episode.id },
-        data: {
-          status: "completed",
-          script: assets.script,
-          transcription: JSON.stringify(assets.transcription),
-          audioFileName,
-          errorMessage: null,
-          completedAt: new Date(),
-        },
+      const assets = await videoMarketingService.createMarketingAssets({
+        topic: episode.topic,
+        audience: episode.audience,
+        tone: episode.tone,
+        ...(options.durationSeconds === undefined
+          ? {}
+          : { durationSeconds: options.durationSeconds }),
       });
-      logger.info("Marketing episode rendered successfully", {
-        episodeId: episode.id,
-        videoFileName,
-      });
+
+      const storageDirectory = getMarketingStorageDirectory();
+      const audioFileName = `${episode.id}.mp3`;
+      const destination = path.join(storageDirectory, audioFileName);
+      const temporaryFile = `${destination}.tmp`;
+      const videoDirectory = getMarketingVideoDirectory();
+      const videoFileName = `${episode.id}.mp4`;
+      const videoDestination = path.join(videoDirectory, videoFileName);
+      const temporaryVideo = path.join(videoDirectory, `${episode.id}.tmp.mp4`);
+      const publicDirectory = getRemotionPublicDirectory();
+      const publicAudioDirectory = path.join(publicDirectory, "audio");
+      const publicAudioPath = path.join(publicAudioDirectory, audioFileName);
+      await mkdir(storageDirectory, { recursive: true });
+      await mkdir(videoDirectory, { recursive: true });
+      await mkdir(publicAudioDirectory, { recursive: true });
+
       try {
-        const instagramMediaId = await instagramService.publishReel(videoFileName, assets.script);
-        logger.info("Marketing episode published to Instagram", {
-          episodeId: episode.id,
-          instagramMediaId,
+        await writeFile(temporaryFile, assets.audio, { flag: "wx" });
+        await rename(temporaryFile, destination);
+        await copyFile(destination, publicAudioPath);
+        try {
+          await renderMarketingVideo(
+            assets.script,
+            audioFileName,
+            publicDirectory,
+            temporaryVideo,
+            assets.transcription,
+          );
+        } finally {
+          await rm(publicAudioPath, { force: true });
+        }
+        await rename(temporaryVideo, videoDestination);
+        await prisma.marketingEpisode.update({
+          where: { id: episode.id },
+          data: {
+            status: "completed",
+            script: assets.script,
+            transcription: JSON.stringify(assets.transcription),
+            audioFileName,
+            errorMessage: null,
+            completedAt: new Date(),
+          },
         });
+        logger.info("Marketing episode rendered successfully", {
+          episodeId: episode.id,
+          videoFileName,
+        });
+        if (options.publishToInstagram !== false) {
+          try {
+            const instagramMediaId = await instagramService.publishReel(
+              videoFileName,
+              assets.script,
+            );
+            logger.info("Marketing episode published to Instagram", {
+              episodeId: episode.id,
+              instagramMediaId,
+            });
+          } catch (error) {
+            logger.error("Marketing episode rendered but Instagram publishing failed", {
+              episodeId: episode.id,
+              error,
+            });
+          }
+        }
       } catch (error) {
-        logger.error("Marketing episode rendered but Instagram publishing failed", {
-          episodeId: episode.id,
-          error,
-        });
+        await rm(temporaryFile, { force: true });
+        await rm(destination, { force: true });
+        await rm(temporaryVideo, { force: true });
+        await rm(publicAudioPath, { force: true });
+        throw error;
       }
     } catch (error) {
-      await rm(temporaryFile, { force: true });
-      await rm(temporaryVideo, { force: true });
-      await rm(publicAudioPath, { force: true });
-      throw error;
+      const message = error instanceof Error ? error.message : "Unknown generation error";
+      await prisma.marketingEpisode.update({
+        where: { id: episode.id },
+        data: { status: "failed", errorMessage: message.slice(0, 1000) },
+      });
+      logger.error("Marketing episode generation failed", { episodeId: episode.id, error });
     }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : "Unknown generation error";
-    await prisma.marketingEpisode.update({
-      where: { id: episode.id },
-      data: { status: "failed", errorMessage: message.slice(0, 1000) },
-    });
-    logger.error("Marketing episode generation failed", { episodeId: episode.id, error });
-  }
+  });
 }
 
 export async function processDueMarketingEpisodes(): Promise<void> {

@@ -26,9 +26,8 @@ import {
 
 // Componentes y vistas principales de H-Flow
 import AthletesManager from '@/components/AthletesManager'
-import VoiceSimulatorWidget from '@/components/VoicesSimulatorWidget'
+import VoiceSimulatorWidget from '@/components/VoiceSimulatorWidget'
 import OverviewTab   from '@/components/tabs/OverviewTab'
-import AtletasTab    from '@/components/tabs/AtletasTab'
 import RutinasTab    from '@/components/tabs/RutinasTab'
 import CalendarioTab from '@/components/tabs/CalendarioTab'
 import BibliotecaTab from '@/components/tabs/BibliotecaTab'
@@ -130,7 +129,7 @@ export default function DashboardTabs({
                   'text-[11px] sm:text-xs font-semibold whitespace-nowrap shrink-0',
                   'border-b-2 transition-all duration-300 ease-in-out outline-none',
                   isActive
-                    ? 'border-[#FF5A00] text-[#FF5A00]'
+                    ? 'border-[#f97316] text-[#f97316]'
                     : 'border-transparent text-slate-500 hover:text-slate-300 hover:border-slate-700',
                 ].join(' ')}
               >
@@ -145,7 +144,7 @@ export default function DashboardTabs({
                       'inline-flex items-center justify-center rounded-full text-[9px] font-black',
                       'min-w-[16px] h-4 px-1 leading-none',
                       isActive
-                        ? 'bg-[#FF5A00]/20 text-[#FF5A00]'
+                        ? 'bg-[#f97316]/20 text-[#f97316]'
                         : 'bg-slate-800 text-slate-400',
                     ].join(' ')}
                   >
@@ -162,9 +161,9 @@ export default function DashboardTabs({
       <div className="px-4 sm:px-6 py-6 sm:py-8 transition-all duration-300 ease-in-out animate-in fade-in zoom-in-95" role="tabpanel">
         {activeTab === 'overview' && (
           <>
-            <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700/60 bg-gradient-to-r from-[#FF5A00]/10 via-slate-900/40 to-transparent p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:p-5">
+            <div className="mb-6 flex flex-col gap-4 rounded-2xl border border-slate-700/60 bg-gradient-to-r from-[#f97316]/10 via-slate-900/40 to-transparent p-4 backdrop-blur-md sm:flex-row sm:items-center sm:justify-between sm:p-5">
               <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#FF5A00]/20 bg-[#FF5A00]/10 text-[#FF5A00]">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl border border-[#f97316]/20 bg-[#f97316]/10 text-[#f97316]">
                   <CalendarDays className="h-5 w-5" aria-hidden />
                 </div>
                 <div>

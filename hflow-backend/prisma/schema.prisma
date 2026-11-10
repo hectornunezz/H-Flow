@@ -64,23 +64,45 @@ model CheckIn {
   notes     String?
   photoUrl  String?
   createdAt DateTime @default(now())
-  athlete   Athlete @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  athlete   Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
 
   @@index([athleteId, createdAt])
 }
 
 model WorkoutPlan {
-  id          String   @id @default(cuid())
-  title       String
-  description String
-  trainerId   String
-  athleteId   String
-  scheduledAt DateTime?
-  createdAt   DateTime @default(now())
-  trainer     Trainer  @relation(fields: [trainerId], references: [id], onDelete: Cascade)
-  athlete     Athlete  @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  id           String             @id @default(cuid())
+  title        String
+  description  String
+  trainerId    String
+  athleteId    String
+  sourcePlanId String?
+  scheduledAt  DateTime?
+  createdAt    DateTime           @default(now())
+  trainer      Trainer            @relation(fields: [trainerId], references: [id], onDelete: Cascade)
+  athlete      Athlete            @relation(fields: [athleteId], references: [id], onDelete: Cascade)
+  sourcePlan   WorkoutPlan?       @relation("WorkoutPlanClones", fields: [sourcePlanId], references: [id], onDelete: SetNull)
+  clonedPlans  WorkoutPlan[]      @relation("WorkoutPlanClones")
+  setReports   WorkoutSetReport[]
 
   @@index([scheduledAt, athleteId])
+  @@index([sourcePlanId])
+}
+
+model WorkoutSetReport {
+  id            String      @id @default(cuid())
+  workoutPlanId String
+  exercise      String
+  setNumber     Int
+  targetRir     Float
+  actualRir     Float?
+  actualKg      Float?
+  videoFileName String?
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  workoutPlan   WorkoutPlan @relation(fields: [workoutPlanId], references: [id], onDelete: Cascade)
+
+  @@unique([workoutPlanId, exercise, setNumber])
+  @@index([workoutPlanId, createdAt])
 }
 
 model NutritionPlan {

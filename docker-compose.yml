@@ -38,8 +38,16 @@ services:
       ELEVENLABS_API_KEY: ${ELEVENLABS_API_KEY:-}
       ELEVENLABS_VOICE_ID: ${ELEVENLABS_VOICE_ID:-}
       ELEVENLABS_MODEL_ID: ${ELEVENLABS_MODEL_ID:-eleven_multilingual_v2}
+      ELEVENLABS_LANGUAGE_CODE: ${ELEVENLABS_LANGUAGE_CODE:-es}
+      ELEVENLABS_OUTPUT_FORMAT: ${ELEVENLABS_OUTPUT_FORMAT:-mp3_44100_128}
+      ELEVENLABS_STABILITY: ${ELEVENLABS_STABILITY:-0.45}
+      ELEVENLABS_SIMILARITY_BOOST: ${ELEVENLABS_SIMILARITY_BOOST:-0.82}
+      ELEVENLABS_STYLE: ${ELEVENLABS_STYLE:-0.15}
+      ELEVENLABS_SPEED: ${ELEVENLABS_SPEED:-0.98}
+      ELEVENLABS_USE_SPEAKER_BOOST: ${ELEVENLABS_USE_SPEAKER_BOOST:-true}
       MARKETING_STORAGE_DIR: storage/marketing
       MARKETING_VIDEO_STORAGE_DIR: storage/marketing/videos
+      WORKOUT_VIDEO_STORAGE_DIR: storage/workout-videos
       MARKETING_MEDIA_PUBLIC_URL: ${MARKETING_MEDIA_PUBLIC_URL:-}
       INSTAGRAM_ACCOUNT_ID: ${INSTAGRAM_ACCOUNT_ID:-}
       INSTAGRAM_ACCESS_TOKEN: ${INSTAGRAM_ACCESS_TOKEN:-}
@@ -63,6 +71,7 @@ services:
       - backend_logs:/app/hflow-backend/logs
       - backend_uploads:/app/hflow-backend/uploads
       - backend_marketing:/app/hflow-backend/storage/marketing
+      - backend_workout_videos:/app/hflow-backend/storage/workout-videos
     healthcheck:
       test:
         - CMD
@@ -80,16 +89,17 @@ services:
       dockerfile: hflow-frontend/Dockerfile
       args:
         NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-/api}
-        BACKEND_INTERNAL_URL: http://backend:3000
+        BACKEND_INTERNAL_URL: ${BACKEND_INTERNAL_URL:-http://backend:3000}
     restart: unless-stopped
     depends_on:
       backend:
         condition: service_healthy
     ports:
-      - "3001:3000"
+      - "3001:3001"
 
 volumes:
   postgres_data:
   backend_logs:
   backend_uploads:
   backend_marketing:
+  backend_workout_videos:

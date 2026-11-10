@@ -14,6 +14,10 @@ import {
   X,
 } from "lucide-react";
 import { ApiError, apiFetch, TOKEN_STORAGE_KEY } from "@/lib/api";
+import {
+  DashboardErrorState,
+  DashboardSkeleton,
+} from "@/components/dashboard-feedback";
 
 type Athlete = {
   id: string;
@@ -236,7 +240,7 @@ export default function AthletesPage() {
             {isImporting ? "Importando..." : "Importar desde Excel/CSV"}
           </button>
           <button
-            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400"
+            className="inline-flex h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110"
             onClick={() => setIsCreateOpen(true)}
             type="button"
           >
@@ -249,7 +253,7 @@ export default function AthletesPage() {
       {importError && (
         <p
           aria-live="polite"
-          className="mt-5 rounded-xl border border-red-500/25 bg-red-500/10 px-4 py-3 text-sm text-red-300"
+          className="mt-5 rounded-xl border border-accent/20 bg-accent/[0.06] px-4 py-3 text-sm text-accent-hover"
           role="alert"
         >
           {importError}
@@ -290,18 +294,36 @@ export default function AthletesPage() {
         </div>
 
         {error ? (
-          <div className="px-5 py-12 text-center">
-            <p className="text-sm text-red-300">{error}</p>
-            <button
-              className="mt-3 text-sm font-medium text-white hover:text-accent"
-              onClick={() => setRefreshKey((value) => value + 1)}
-              type="button"
-            >
-              Reintentar
-            </button>
+          <div className="p-5">
+            <DashboardErrorState
+              message={error}
+              onRetry={() => setRefreshKey((value) => value + 1)}
+            />
           </div>
         ) : isLoading ? (
-          <div className="px-5 py-14 text-center text-sm text-muted">Cargando atletas...</div>
+          <div
+            aria-label="Cargando atletas"
+            className="space-y-4 p-5 sm:p-6"
+            role="status"
+          >
+            {Array.from({ length: 5 }, (_, index) => (
+              <div
+                className="grid grid-cols-[minmax(0,1.3fr)_minmax(0,1fr)_5rem_5rem] items-center gap-4"
+                key={index}
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <DashboardSkeleton className="h-9 w-9 shrink-0 rounded-full" />
+                  <div className="min-w-0 flex-1 space-y-2">
+                    <DashboardSkeleton className="h-3 w-2/3" />
+                    <DashboardSkeleton className="h-2.5 w-1/2" />
+                  </div>
+                </div>
+                <DashboardSkeleton className="h-3 w-4/5" />
+                <DashboardSkeleton className="h-3 w-12" />
+                <DashboardSkeleton className="h-6 w-14 rounded-full" />
+              </div>
+            ))}
+          </div>
         ) : athletes.length === 0 ? (
           <div className="px-5 py-14 text-center">
             <Users className="mx-auto text-muted" size={26} />
@@ -505,7 +527,7 @@ export default function AthletesPage() {
               </div>
 
               {createError && (
-                <p className="rounded-lg border border-red-500/25 bg-red-500/10 px-3 py-2.5 text-sm text-red-300">
+                <p className="rounded-lg border border-accent/20 bg-accent/[0.06] px-3 py-2.5 text-sm text-accent-hover">
                   {createError}
                 </p>
               )}
@@ -520,7 +542,7 @@ export default function AthletesPage() {
                   Cancelar
                 </button>
                 <button
-                  className="h-10 rounded-lg bg-accent px-4 text-sm font-semibold text-black transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+                  className="h-10 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
                   disabled={isCreating}
                   type="submit"
                 >

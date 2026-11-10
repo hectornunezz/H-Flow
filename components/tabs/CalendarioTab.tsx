@@ -29,7 +29,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
 
       {/* ── Header ── */}
       <div>
-        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <h2 className="text-[11px] sm:text-xs font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Programación
         </h2>
         <p className="text-lg sm:text-xl font-black text-white mt-1">
@@ -65,7 +65,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
               <select
                 name="workout_id"
                 required
-                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors min-h-10 shadow-inner"
+                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors min-h-10 shadow-inner"
               >
                 <option value="">Selecciona Rutina...</option>
                 {workouts.map((w) => (
@@ -76,7 +76,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
               <select
                 name="athlete_id"
                 required
-                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors min-h-10 shadow-inner"
+                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors min-h-10 shadow-inner"
               >
                 <option value="">Selecciona Atleta...</option>
                 {athletes.map((p) => (
@@ -90,7 +90,7 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
                 type="date"
                 name="scheduled_date"
                 required
-                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors font-mono min-h-10 shadow-inner"
+                className="bg-slate-950 border border-slate-700/80 rounded-xl px-4 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors font-mono min-h-10 shadow-inner"
               />
 
               <button

@@ -5,20 +5,27 @@ metadata:
   namespace: hflow
 data:
   NODE_ENV: production
-  PORT: "3000"
-  DB_HOST: "postgres.example.com"
+  NEXT_PUBLIC_API_URL: "/api"
+  BACKEND_INTERNAL_URL: "http://hflow-backend:3000"
+  DB_HOST: "hflow-postgres.hflow.svc.cluster.local"
   DB_PORT: "5432"
-  DB_NAME: hflow
-  DB_USER: hflow
   FRONTEND_URL: "https://hflow.example.com"
   FRONTEND_ORIGINS: "https://hflow.example.com"
   ADMIN_TRAINER_IDS: ""
   OPENAI_MODEL: gpt-4o-mini
   WHISPER_MODEL: whisper-1
   ELEVENLABS_MODEL_ID: eleven_multilingual_v2
+  ELEVENLABS_LANGUAGE_CODE: es
+  ELEVENLABS_OUTPUT_FORMAT: mp3_44100_128
+  ELEVENLABS_STABILITY: "0.45"
+  ELEVENLABS_SIMILARITY_BOOST: "0.82"
+  ELEVENLABS_STYLE: "0.15"
+  ELEVENLABS_SPEED: "0.98"
+  ELEVENLABS_USE_SPEAKER_BOOST: "true"
   INSTAGRAM_GRAPH_API_VERSION: v22.0
   MARKETING_STORAGE_DIR: /app/hflow-backend/storage/marketing
   MARKETING_VIDEO_STORAGE_DIR: /app/hflow-backend/storage/marketing/videos
+  WORKOUT_VIDEO_STORAGE_DIR: /app/hflow-backend/storage/workout-videos
   REMOTION_PUBLIC_DIR: /app/video-generador/public
   STRIPE_SUCCESS_URL: "https://hflow.example.com/billing/success"
   STRIPE_CANCEL_URL: "https://hflow.example.com/pricing"

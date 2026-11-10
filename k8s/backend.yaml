@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: hflow-backend
   namespace: hflow
+  labels:
+    app: hflow-backend
 spec:
   type: ClusterIP
   selector:
@@ -17,6 +19,8 @@ kind: Deployment
 metadata:
   name: hflow-backend
   namespace: hflow
+  labels:
+    app: hflow-backend
 spec:
   replicas: 1
   strategy:
@@ -28,6 +32,10 @@ spec:
     metadata:
       labels:
         app: hflow-backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/path: /metrics
+        prometheus.io/port: "3000"
     spec:
       terminationGracePeriodSeconds: 60
       securityContext:
@@ -48,11 +56,16 @@ spec:
                 name: hflow-config
             - secretRef:
                 name: hflow-secrets
+          env:
+            - name: PORT
+              value: "3000"
           volumeMounts:
             - name: uploads
               mountPath: /app/hflow-backend/uploads
             - name: marketing
               mountPath: /app/hflow-backend/storage
+            - name: workout-videos
+              mountPath: /app/hflow-backend/storage/workout-videos
             - name: logs
               mountPath: /app/hflow-backend/logs
           startupProbe:
@@ -71,7 +84,7 @@ spec:
             timeoutSeconds: 3
           livenessProbe:
             httpGet:
-              path: /health/live
+              path: /healthz
               port: http
             periodSeconds: 60
             failureThreshold: 3
@@ -95,5 +108,8 @@ spec:
         - name: marketing
           persistentVolumeClaim:
             claimName: hflow-marketing
+        - name: workout-videos
+          persistentVolumeClaim:
+            claimName: hflow-workout-videos
         - name: logs
           emptyDir: {}

@@ -7,6 +7,10 @@ mkdirSync(logDirectory, { recursive: true });
 
 const logger = createLogger({
   level: process.env.LOG_LEVEL || "info",
+  defaultMeta: {
+    service: "hflow-backend",
+    environment: process.env.NODE_ENV || "development",
+  },
   format: format.combine(
     format.errors({ stack: true }),
     format((info) => {

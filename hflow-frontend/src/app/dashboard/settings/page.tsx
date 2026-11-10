@@ -313,7 +313,7 @@ export default function SettingsPage() {
 
         <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
           <button
-            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-accent px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-500 disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-[#f97316] to-[#ea580c] px-5 py-3 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isLoading || isSaving}
             type="submit"
           >

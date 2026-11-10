@@ -6,6 +6,7 @@ const backendOrigin = (process.env.BACKEND_INTERNAL_URL ?? "http://localhost:300
 
 const nextConfig = {
   output: "standalone",
+  distDir: process.env.NEXT_BUILD_DIR || ".next",
   async rewrites() {
     return [
       { source: "/api/:path*", destination: `${backendOrigin}/api/:path*` },

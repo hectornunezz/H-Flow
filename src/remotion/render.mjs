@@ -6,6 +6,18 @@ import { renderMedia, selectComposition } from "@remotion/renderer";
 
 const currentDirectory = path.dirname(fileURLToPath(import.meta.url));
 
+function logEvent(level, event, fields = {}) {
+  const record = {
+    timestamp: new Date().toISOString(),
+    level,
+    service: "hflow-remotion-renderer",
+    event,
+    ...fields,
+  };
+  const stream = level === "error" ? process.stderr : process.stdout;
+  stream.write(`${JSON.stringify(record)}\n`);
+}
+
 function readArguments(args) {
   const options = {};
   for (let index = 0; index < args.length; index += 1) {
@@ -100,10 +112,13 @@ async function main() {
     outputLocation,
     inputProps,
   });
-  console.log(`Video rendered to ${outputLocation}`);
+  logEvent("info", "video_rendered", { outputLocation });
 }
 
 main().catch((error) => {
-  console.error("Video rendering failed:", error);
+  logEvent("error", "video_render_failed", {
+    message: error instanceof Error ? error.message : String(error),
+    stack: error instanceof Error ? error.stack : undefined,
+  });
   process.exitCode = 1;
 });

@@ -88,6 +88,47 @@ export async function createWorkoutPlan(request: Request, response: Response): P
   }
 }
 
+export async function cloneWorkoutPlan(request: Request, response: Response): Promise<void> {
+  const trainerId = getTrainerId(request, response);
+  if (!trainerId) return;
+  const planId = getWorkoutPlanId(request);
+  if (!planId) {
+    response.status(400).json({ error: { message: "id is required" } });
+    return;
+  }
+
+  try {
+    const sourcePlan = await prisma.workoutPlan.findFirst({
+      where: { id: planId, trainerId },
+    });
+    if (!sourcePlan) {
+      response.status(404).json({ error: { message: "Plan not found" } });
+      return;
+    }
+
+    const scheduledAt = sourcePlan.scheduledAt
+      ? new Date(sourcePlan.scheduledAt)
+      : null;
+    if (scheduledAt) {
+      scheduledAt.setUTCDate(scheduledAt.getUTCDate() + 7);
+    }
+
+    const clonedPlan = await prisma.workoutPlan.create({
+      data: {
+        title: sourcePlan.title,
+        description: sourcePlan.description,
+        trainerId: sourcePlan.trainerId,
+        athleteId: sourcePlan.athleteId,
+        sourcePlanId: sourcePlan.id,
+        scheduledAt,
+      },
+    });
+    response.status(201).json({ data: clonedPlan });
+  } catch (error) {
+    sendPlanError(response, error, "Workout plan clone");
+  }
+}
+
 export async function listWorkoutPlans(request: Request, response: Response): Promise<void> {
   const trainerId = getTrainerId(request, response);
   if (!trainerId) return;

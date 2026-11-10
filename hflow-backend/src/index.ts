@@ -4,7 +4,6 @@ import express from "express";
 import path from "node:path";
 import helmet from "helmet";
 import { rateLimit } from "express-rate-limit";
-import morgan from "morgan";
 import swaggerUi from "swagger-ui-express";
 import { authenticateToken } from "./middlewares/auth.middleware";
 import errorHandler from "./middlewares/errorHandler.middleware";
@@ -27,7 +26,8 @@ import {
 import logger from "./utils/logger";
 import { startDailyRemindersCron } from "./cron/dailyReminders.cron";
 import { swaggerSpec } from "./config/swagger";
-import { prisma } from "./services/prisma.service";
+import healthRouter from "./routes/health.routes";
+import { collectHttpMetrics, metricsHandler } from "./middlewares/observability.middleware";
 
 const app = express();
 const port = Number(process.env.PORT) || 3000;
@@ -69,25 +69,9 @@ const corsOptions: CorsOptions = {
 };
 
 app.use(helmet());
-app.use(
-  morgan("combined", {
-    stream: {
-      write: (message) => logger.info(message.trim()),
-    },
-  }),
-);
-app.get("/health/live", (_request, response) => {
-  response.status(200).json({ status: "ok" });
-});
-app.get("/health/ready", async (_request, response) => {
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    response.status(200).json({ status: "ready" });
-  } catch (error) {
-    logger.warn("Backend readiness check failed", { error });
-    response.status(503).json({ status: "not_ready" });
-  }
-});
+app.use(collectHttpMetrics);
+app.use(healthRouter);
+app.get("/metrics", metricsHandler);
 app.use(
   rateLimit({
     windowMs: 15 * 60 * 1000,

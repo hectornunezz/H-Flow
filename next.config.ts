@@ -19,7 +19,11 @@ try {
 }
 
 const nextConfig: NextConfig = {
+  distDir: process.env.NEXT_BUILD_DIR || '.next',
   compress: true,
+  turbopack: {
+    root: process.cwd(),
+  },
   compiler: {
     removeConsole: {
       exclude: ['error', 'warn'],
@@ -46,19 +50,6 @@ const nextConfig: NextConfig = {
     serverActions: {
       bodySizeLimit: '26mb',
     },
-  },
-  async headers() {
-    return [
-      {
-        source: '/_next/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ]
   },
 }
 

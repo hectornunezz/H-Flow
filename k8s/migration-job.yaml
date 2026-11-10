@@ -20,10 +20,21 @@ spec:
           command:
             - sh
             - -c
-            - until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$DB_USER" -d "$DB_NAME"; do sleep 2; done
+            - until pg_isready -h "$DB_HOST" -p "$DB_PORT" -U "$POSTGRES_USER" -d "$POSTGRES_DB"; do sleep 2; done
           envFrom:
             - configMapRef:
                 name: hflow-config
+          env:
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: hflow-secrets
+                  key: POSTGRES_DB
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: hflow-secrets
+                  key: POSTGRES_USER
       containers:
         - name: migrate
           image: ghcr.io/your-org/hflow-backend:0.1.0

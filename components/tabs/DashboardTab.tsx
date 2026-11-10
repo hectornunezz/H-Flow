@@ -43,7 +43,7 @@ function KpiCard({ label, value, sub, accent }: KpiCardProps) {
       <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">{label}</p>
       <p className={[
         'text-2xl sm:text-3xl font-black font-mono tabular-nums',
-        accent ? 'text-[#FF5A00]' : 'text-white',
+        accent ? 'text-[#f97316]' : 'text-white',
       ].join(' ')}>
         {value}
       </p>
@@ -60,7 +60,7 @@ export default function DashboardTab({ userName, athleteCount, pendingCount, wor
 
       {/* ── Saludo ── */}
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#FF5A00]">
+        <p className="text-[11px] font-bold uppercase tracking-[0.2em] text-[#f97316]">
           Command Center
         </p>
         <h1 className="text-xl sm:text-2xl font-black text-white mt-1 leading-tight">

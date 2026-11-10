@@ -4,6 +4,7 @@ import { DopaminergicVideo, type DopaminergicVideoProps } from "./Video";
 
 const FPS = 30;
 const DEFAULT_TEXT = "Cada entrenamiento te acerca a una versión más fuerte de ti.";
+const DEFAULT_CALL_TO_ACTION = "Entrenadores: crea tu próximo plan con H-FLOW.";
 
 export function RemotionRoot() {
   return (
@@ -14,7 +15,12 @@ export function RemotionRoot() {
       height={1920}
       fps={FPS}
       durationInFrames={FPS * 10}
-      defaultProps={{ text: DEFAULT_TEXT, audioSrc: "" } satisfies DopaminergicVideoProps}
+      defaultProps={{
+        text: DEFAULT_TEXT,
+        audioSrc: "",
+        captions: [],
+        callToAction: DEFAULT_CALL_TO_ACTION,
+      } satisfies DopaminergicVideoProps}
       calculateMetadata={async ({ props }) => {
         const audioSrc =
           props.audioSrc &&
