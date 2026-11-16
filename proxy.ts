@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
   const pathname = request.nextUrl.pathname
   const isPricingPage = pathname === '/pricing' || pathname.startsWith('/pricing/')
 
-  if (pathname === '/login' || pathname === '/beta-pending') {
+  if (pathname === '/login' || pathname === '/register' || pathname === '/beta-pending') {
     return NextResponse.next()
   }
   if (isPricingPage) {

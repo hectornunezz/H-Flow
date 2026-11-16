@@ -28,7 +28,6 @@ data:
   MARKETING_STORAGE_DIR: /app/hflow-backend/storage/marketing
   MARKETING_VIDEO_STORAGE_DIR: /app/hflow-backend/storage/marketing/videos
   WORKOUT_VIDEO_STORAGE_DIR: /app/hflow-backend/storage/workout-videos
-  REMOTION_PUBLIC_DIR: /app/video-generador/public
   STRIPE_SUCCESS_URL: "https://hflow.example.com/billing/success"
   STRIPE_CANCEL_URL: "https://hflow.example.com/pricing"
   PASSWORD_RESET_URL: "https://hflow.example.com/reset-password"

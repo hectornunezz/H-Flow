@@ -1,0 +1,338 @@
+<!doctype html>
+<html lang="es" data-resolution="{{RESOLUTION}}">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width={{WIDTH}}, height={{HEIGHT}}" />
+    <title>H-FLOW | Marketing</title>
+    <script src="./gsap.min.js"></script>
+    <style>
+      :root {
+        color-scheme: dark;
+        --ground: #0a0a0a;
+        --blue: #3b82f6;
+        --ink: #eaeaea;
+        --muted: #9ca3af;
+        --font-display: Inter, Roboto, Arial, sans-serif;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      html,
+      body {
+        width: {{WIDTH}}px;
+        height: {{HEIGHT}}px;
+        margin: 0;
+        overflow: hidden;
+        background: var(--ground);
+        color: var(--ink);
+        font-family: var(--font-display);
+      }
+
+      #composition {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        overflow: hidden;
+        background:
+          radial-gradient(ellipse at 50% 38%, rgb(59 130 246 / 10%), transparent 52%),
+          linear-gradient(145deg, #0a0a0a 0%, #10131a 55%, #0a0a0a 100%);
+      }
+
+      .clip {
+        position: absolute;
+      }
+
+      #grid {
+        inset: 0;
+        opacity: 0.24;
+        background-image:
+          linear-gradient(rgb(234 234 234 / 4%) 1px, transparent 1px),
+          linear-gradient(90deg, rgb(234 234 234 / 4%) 1px, transparent 1px);
+        background-size: 64px 64px;
+        mask-image: linear-gradient(to bottom, #000 0%, transparent 92%);
+      }
+
+      #glow {
+        top: 26%;
+        left: 50%;
+        width: 70%;
+        height: 36%;
+        border-radius: 50%;
+        background: var(--blue);
+        filter: blur(145px);
+        opacity: 0.16;
+        transform: translateX(-50%);
+      }
+
+      #brand {
+        top: 7%;
+        left: 8%;
+        display: flex;
+        align-items: center;
+        gap: 18px;
+        color: var(--ink);
+        font-size: 30px;
+        font-weight: 800;
+        letter-spacing: 0.16em;
+      }
+
+      #brand-mark {
+        width: 42px;
+        height: 42px;
+        border: 2px solid var(--blue);
+        border-radius: 12px;
+        box-shadow: 0 0 28px rgb(59 130 246 / 42%);
+        transform: rotate(45deg);
+      }
+
+      #brand small {
+        color: var(--muted);
+        font-size: 15px;
+        font-weight: 600;
+        letter-spacing: 0.12em;
+      }
+
+      #topic {
+        top: 18%;
+        left: 8%;
+        width: 84%;
+        color: var(--ink);
+        font-size: clamp(56px, 8vw, 104px);
+        font-weight: 800;
+        letter-spacing: -0.055em;
+        line-height: 0.98;
+        overflow-wrap: anywhere;
+      }
+
+      #audience {
+        top: 36%;
+        left: 8%;
+        color: var(--blue);
+        font-size: 24px;
+        font-weight: 700;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+      }
+
+      #dashboard {
+        top: 45%;
+        left: 8%;
+        width: 84%;
+        min-height: 300px;
+        padding: 34px;
+        border: 1px solid rgb(59 130 246 / 32%);
+        border-radius: 30px;
+        background: linear-gradient(145deg, rgb(25 31 42 / 92%), rgb(12 14 19 / 86%));
+        box-shadow: 0 26px 90px rgb(0 0 0 / 45%), 0 0 36px rgb(59 130 246 / 12%);
+      }
+
+      #dashboard-heading {
+        color: var(--muted);
+        font-size: 18px;
+        font-weight: 700;
+        letter-spacing: 0.13em;
+        text-transform: uppercase;
+      }
+
+      #dashboard-title {
+        margin-top: 16px;
+        color: var(--ink);
+        font-size: 38px;
+        font-weight: 700;
+      }
+
+      #dashboard-rule {
+        width: 100%;
+        height: 2px;
+        margin-top: 24px;
+        background: linear-gradient(90deg, var(--blue), transparent);
+      }
+
+      #dashboard-bars {
+        display: flex;
+        align-items: end;
+        gap: 16px;
+        height: 80px;
+        margin-top: 26px;
+      }
+
+      #dashboard-bars span {
+        flex: 1;
+        border-radius: 8px 8px 2px 2px;
+        background: linear-gradient(180deg, #60a5fa, #2563eb 85%, rgb(37 99 235 / 25%));
+        box-shadow: 0 0 22px rgb(59 130 246 / 18%);
+      }
+
+      #captions {
+        top: 75%;
+        left: 8%;
+        width: 84%;
+        min-height: 130px;
+        text-align: center;
+      }
+
+      .caption {
+        inset: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--ink);
+        font-size: 42px;
+        font-weight: 700;
+        line-height: 1.18;
+        text-shadow: 0 4px 28px rgb(0 0 0 / 90%);
+      }
+
+      #call-to-action {
+        right: 8%;
+        bottom: 7%;
+        left: 8%;
+        color: var(--blue);
+        font-size: 25px;
+        font-weight: 800;
+        letter-spacing: 0.08em;
+        text-align: center;
+        text-transform: uppercase;
+      }
+
+      #progress-track {
+        right: 8%;
+        bottom: 4%;
+        left: 8%;
+        height: 4px;
+        overflow: hidden;
+        border-radius: 99px;
+        background: rgb(234 234 234 / 14%);
+      }
+
+      #progress-fill {
+        width: 100%;
+        height: 100%;
+        background: var(--blue);
+        box-shadow: 0 0 18px var(--blue);
+        transform: scaleX(0);
+        transform-origin: left center;
+      }
+    </style>
+  </head>
+  <body>
+    <main
+      id="composition"
+      data-composition-id="main"
+      data-start="0"
+      data-duration="{{DURATION}}"
+      data-width="{{WIDTH}}"
+      data-height="{{HEIGHT}}"
+    >
+      <div id="grid" aria-hidden="true"></div>
+      <div id="glow" class="clip" aria-hidden="true"></div>
+      <div id="brand" class="clip">
+        <span id="brand-mark" aria-hidden="true"></span>
+        <span>H-FLOW</span>
+        <small>PERFORMANCE</small>
+      </div>
+      <h1 id="topic" class="clip">{{TOPIC}}</h1>
+      <p id="audience" class="clip">{{AUDIENCE}}</p>
+      <section id="dashboard" class="clip">
+        <div id="dashboard-heading">{{TONE}} / H-FLOW COACHING</div>
+        <div id="dashboard-title">Planifica. Progresa. Repite.</div>
+        <div id="dashboard-rule"></div>
+        <div id="dashboard-bars" aria-hidden="true">
+          <span style="height: 42%"></span>
+          <span style="height: 68%"></span>
+          <span style="height: 52%"></span>
+          <span style="height: 82%"></span>
+          <span style="height: 63%"></span>
+          <span style="height: 96%"></span>
+          <span style="height: 74%"></span>
+        </div>
+      </section>
+      <section id="captions" aria-label="Narración">
+        {{CAPTIONS}}
+      </section>
+      <p id="call-to-action" class="clip">
+        {{CALL_TO_ACTION}}
+      </p>
+      <div id="progress-track" aria-hidden="true">
+        <div id="progress-fill"></div>
+      </div>
+      <audio
+        id="voiceover"
+        src="./narration.mp3"
+        data-start="0"
+        data-duration="{{DURATION}}"
+        data-volume="1"
+      ></audio>
+    </main>
+    <script>
+      const duration = {{DURATION}};
+      const captionTiming = {{CAPTION_TIMING}};
+      const timeline = gsap.timeline({ paused: true });
+
+      timeline.fromTo(
+        "#brand",
+        { opacity: 0, y: -24 },
+        { opacity: 1, y: 0, duration: 0.5, ease: "power3.out" },
+        0,
+      );
+      timeline.fromTo(
+        "#topic",
+        { opacity: 0, y: 42 },
+        { opacity: 1, y: 0, duration: 0.75, ease: "power3.out" },
+        0.12,
+      );
+      timeline.fromTo(
+        "#audience",
+        { opacity: 0, x: -18 },
+        { opacity: 1, x: 0, duration: 0.45, ease: "power2.out" },
+        0.48,
+      );
+      timeline.fromTo(
+        "#dashboard",
+        { opacity: 0, y: 36, scale: 0.96 },
+        { opacity: 1, y: 0, scale: 1, duration: 0.7, ease: "power3.out" },
+        0.7,
+      );
+      timeline.fromTo(
+        "#glow",
+        { scale: 0.88, opacity: 0.1 },
+        { scale: 1.12, opacity: 0.23, duration: duration, ease: "sine.inOut" },
+        0,
+      );
+
+      captionTiming.forEach((caption, index) => {
+        const target = `#caption-${index}`;
+        timeline.fromTo(
+          target,
+          { opacity: 0, y: 24 },
+          { opacity: 1, y: 0, duration: 0.32, ease: "power3.out" },
+          caption.start,
+        );
+        timeline.to(
+          target,
+          { opacity: 0, y: -12, duration: 0.2, ease: "power2.in" },
+          Math.max(caption.start, caption.end - 0.18),
+        );
+      });
+
+      timeline.fromTo(
+        "#call-to-action",
+        { opacity: 0, y: 16 },
+        { opacity: 1, y: 0, duration: 0.45, ease: "power2.out" },
+        {{CTA_START}},
+      );
+      timeline.fromTo(
+        "#progress-fill",
+        { scaleX: 0 },
+        { scaleX: 1, duration: duration, ease: "none" },
+        0,
+      );
+
+      window.__timelines = window.__timelines || {};
+      window.__timelines["main"] = timeline;
+      timeline.seek(0);
+    </script>
+  </body>
+</html>

@@ -83,7 +83,7 @@ Los identificadores con permisos administrativos se configuran mediante
 
 ## Puesta en marcha completa con Docker Compose
 
-Requisitos: Node.js 20 o superior, npm y Docker con Docker Compose.
+Requisitos: Node.js 22 o superior, npm y Docker con Docker Compose.
 
 Desde la raíz del repositorio:
 

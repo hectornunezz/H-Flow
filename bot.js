@@ -1,8 +1,7 @@
 /* eslint-disable @typescript-eslint/no-require-imports -- CommonJS entrypoint loads backend TS through ts-node. */
 const { randomUUID } = require("node:crypto");
-const { open, mkdir, readFile, rename, rm, stat, writeFile } = require("node:fs/promises");
+const { open, mkdir, readFile, rename, rm, writeFile } = require("node:fs/promises");
 const path = require("node:path");
-const { spawn } = require("node:child_process");
 const readline = require("node:readline/promises");
 
 const ROOT = __dirname;
@@ -112,77 +111,20 @@ function getCaptions(transcription, alignedTranscription) {
   }));
 }
 
-async function renderVideo({ script, audio, captions, outputPath }) {
-  const publicDirectory = path.join(
-    ROOT,
-    "storage",
-    `remotion-public-${process.pid}-${randomUUID()}`,
+async function renderVideo({ script, audio, captions, outputPath, topic, audience, tone }) {
+  const { renderHyperframesVideo } = require(
+    path.join(ROOT, "hflow-backend", "src", "services", "hyperframesRenderer.service.ts"),
   );
-  const audioDirectory = path.join(publicDirectory, "audio");
-  const audioFileName = "marketing-voice.mp3";
-  const audioPath = path.join(audioDirectory, audioFileName);
-  const propsPath = path.join(publicDirectory, "props.json");
-  const cliPath = path.join(ROOT, "node_modules", "@remotion", "cli", "remotion-cli.js");
-  const entryPoint = path.join(ROOT, "src", "remotion", "index.ts");
-
-  try {
-    await mkdir(audioDirectory, { recursive: true });
-    await writeFile(audioPath, audio, { flag: "wx" });
-    await writeFile(
-      propsPath,
-      JSON.stringify({
-        text: script,
-        audioSrc: `audio/${audioFileName}`,
-        captions,
-        callToAction: CALL_TO_ACTION,
-      }),
-      { flag: "wx" },
-    );
-
-    await new Promise((resolve, reject) => {
-      const renderer = spawn(
-        process.execPath,
-        [
-          cliPath,
-          "render",
-          entryPoint,
-          "DopaminergicVideo",
-          outputPath,
-          `--props=${propsPath}`,
-          `--public-dir=${publicDirectory}`,
-          "--codec=h264",
-          "--crf=23",
-          "--pixel-format=yuv420p",
-          "--concurrency=1",
-          "--overwrite",
-        ],
-        { cwd: ROOT, stdio: ["ignore", "inherit", "pipe"] },
-      );
-      let errorOutput = "";
-      renderer.stderr.setEncoding("utf8");
-      renderer.stderr.on("data", (chunk) => {
-        errorOutput = `${errorOutput}${chunk}`.slice(-4000);
-      });
-      renderer.once("error", reject);
-      renderer.once("close", (code) => {
-        if (code === 0) {
-          resolve();
-          return;
-        }
-        reject(
-          new Error(
-            `Remotion render failed (${code}): ${errorOutput.trim() || "no details"}`,
-          ),
-        );
-      });
-    });
-    const output = await stat(outputPath);
-    if (!output.isFile() || output.size === 0) {
-      throw new Error("Remotion did not produce a valid MP4 file");
-    }
-  } finally {
-    await rm(publicDirectory, { recursive: true, force: true });
-  }
+  await renderHyperframesVideo({
+    script,
+    audio,
+    captions,
+    outputPath,
+    topic,
+    audience,
+    tone,
+    callToAction: CALL_TO_ACTION,
+  });
 }
 
 async function promptForText(rl, label) {
@@ -332,6 +274,9 @@ async function runManualVideo(args = process.argv.slice(2)) {
         audio: generatedVoice.audio,
         captions,
         outputPath,
+        topic,
+        audience,
+        tone,
       });
 
       request.status = "completed";

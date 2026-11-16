@@ -36,7 +36,7 @@ const {
 const app = express();
 app.use(express.json());
 app.use((requestHandler, _response, next) => {
-  if (requestHandler.get("Authorization") === "Bearer test-token") {
+  if (requestHandler.get("Authorization")) {
     Object.assign(requestHandler, { auth: { trainerId: "trainer-1" } });
   }
   next();
@@ -96,13 +96,14 @@ describe("GET /episodes/:episodeId/video", () => {
         audience: episode.audience,
         tone: episode.tone,
         durationSeconds: 30,
+        aspectRatio: "16:9",
       });
 
     expect(response.status).toBe(201);
     expect(mockPrisma.marketingEpisode.create).toHaveBeenCalledTimes(1);
     expect(mockGenerateEpisode).toHaveBeenCalledWith(
       episode.id,
-      { publishToInstagram: false, durationSeconds: 30 },
+      { publishToInstagram: false, durationSeconds: 30, aspectRatio: "16:9" },
     );
     expect(response.body.data).toMatchObject({
       id: episode.id,
@@ -126,6 +127,22 @@ describe("GET /episodes/:episodeId/video", () => {
     expect(response.status).toBe(400);
     expect(mockPrisma.marketingEpisode.create).not.toHaveBeenCalled();
     expect(mockGenerateEpisode).not.toHaveBeenCalled();
+  });
+
+  it("rejects unsupported aspect ratios before creating a marketing episode", async () => {
+    const response = await request(app)
+      .post("/generate")
+      .set("Authorization", "******")
+      .send({
+        topic: "Tema",
+        audience: "Entrenadores",
+        tone: "Cercano",
+        aspectRatio: "1:1",
+      });
+
+    expect(response.status).toBe(400);
+    expect(response.body.error.message).toBe("aspectRatio must be either 9:16 or 16:9");
+    expect(mockPrisma.marketingEpisode.create).not.toHaveBeenCalled();
   });
 
   it("requires authentication to generate a Reel", async () => {

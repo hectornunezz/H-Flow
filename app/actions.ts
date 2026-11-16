@@ -1,6 +1,7 @@
 'use server'
 
 import { createClient } from '@/utils/supabase/server'
+import { createAdminClient } from '@/utils/supabase/admin'
 import { revalidatePath } from 'next/cache'
 import { redirect } from 'next/navigation'
 
@@ -135,47 +136,108 @@ export async function login(formData: FormData) {
   redirect('/')
 }
 
+async function ensureBetaSignupProfile(
+  userId: string,
+  email: string,
+  fullName: string,
+  admin: ReturnType<typeof createAdminClient>,
+) {
+  const { data: existingProfile, error: lookupError } = await admin
+    .from('profiles')
+    .select('id')
+    .eq('id', userId)
+    .maybeSingle()
+
+  if (lookupError) {
+    throw new Error(`No se pudo comprobar el perfil: ${lookupError.message}`)
+  }
+  if (existingProfile) return
+
+  const { error: insertError } = await admin.from('profiles').insert({
+    id: userId,
+    email,
+    full_name: fullName,
+    role: 'coach',
+    is_beta_tester: false,
+    is_subscribed: false,
+  })
+
+  if (insertError?.code === '23505') {
+    const { data: concurrentProfile, error: concurrentLookupError } = await admin
+      .from('profiles')
+      .select('id')
+      .eq('id', userId)
+      .maybeSingle()
+
+    if (!concurrentLookupError && concurrentProfile) return
+  }
+
+  if (insertError) {
+    throw new Error(`No se pudo crear el perfil beta: ${insertError.message}`)
+  }
+}
+
 export async function signup(formData: FormData) {
-  const email = formData.get('email') as string
-  const password = formData.get('password') as string
+  const email = formData.get('email')
+  const password = formData.get('password')
+  const submittedName = formData.get('name')
+  const normalizedEmail = typeof email === 'string' ? email.trim().toLowerCase() : ''
+  const normalizedPassword = typeof password === 'string' ? password : ''
+  const fullName = typeof submittedName === 'string' ? submittedName.trim() : ''
 
-  if (!email || !password) {
-    return redirect('/login?message=Faltan campos por rellenar')
+  if (!normalizedEmail || !normalizedPassword || !fullName) {
+    return redirect(`/register?message=${encodeURIComponent('Completa todos los campos.')}`)
+  }
+  if (normalizedPassword.length < 6) {
+    return redirect(`/register?message=${encodeURIComponent('La contraseña debe tener al menos 6 caracteres.')}`)
   }
 
-  const supabase = await createClient()
+  let redirectPath = '/register'
+  let message: string | undefined
 
-  // 1. Registro en Supabase Auth
-  const { data, error } = await supabase.auth.signUp({ email, password })
+  try {
+    const supabase = await createClient()
+    const admin = createAdminClient()
+    const { data, error } = await supabase.auth.signUp({
+      email: normalizedEmail,
+      password: normalizedPassword,
+      options: { data: { full_name: fullName } },
+    })
 
-  if (error) {
-    console.error('❌ Error en Supabase Auth:', error.message)
-    return redirect(`/login?message=${encodeURIComponent(error.message)}`)
-  }
+    if (error) {
+      message = error.message
+    } else if (!data.user) {
+      message = 'No se pudo crear la cuenta. Inténtalo de nuevo.'
+    } else if (data.user.identities?.length === 0) {
+      message = 'Si el correo puede registrarse, recibirás instrucciones para continuar.'
+    } else {
+      await ensureBetaSignupProfile(
+        data.user.id,
+        data.user.email ?? normalizedEmail,
+        fullName,
+        admin,
+      )
 
-  if (!data.user) {
-    return redirect('/login?message=No se pudo crear el usuario')
-  }
-
-  // 2. Creación o actualización del perfil (evita conflictos de triggers)
-  const { error: profileError } = await supabase.from('profiles').upsert(
-    [
-      {
-        id: data.user.id,
-        email: email,
-        full_name: email.split('@')[0],
-        role: 'coach'
+      if (data.session) {
+        redirectPath = '/beta-pending'
+      } else {
+        message = 'Cuenta creada. Confirma tu correo para iniciar sesión y solicitar acceso a la beta.'
       }
-    ],
-    { onConflict: 'id' }
-  )
+    }
+  } catch (error) {
+    console.error(
+      '[signup] No se pudo completar el registro:',
+      error instanceof Error ? error.message : String(error),
+    )
+    message = 'No se pudo completar el registro por un problema de conexión. Inténtalo de nuevo más tarde.'
+  }
 
-  if (profileError) {
-    console.error('⚠️ Error al guardar en profiles:', profileError.message)
+  if (message) {
+    redirectPath = `/register?message=${encodeURIComponent(message)}`
   }
 
   revalidatePath('/')
-  redirect('/')
+  redirect(redirectPath)
 }
 
 export async function signout() {

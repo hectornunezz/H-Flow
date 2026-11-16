@@ -34,7 +34,7 @@ describe('Next.js proxy authentication', () => {
     expect(response.cookies.get('sb-refresh-token')?.value).toBe('refreshed')
   })
 
-  it.each(['/login', '/beta-pending', '/pricing', '/pricing/pro'])(
+  it.each(['/login', '/register', '/beta-pending', '/pricing', '/pricing/pro'])(
     'skips public route %s when its feature is active',
     async (pathname) => {
     await proxy(new NextRequest(`https://hflow.test${pathname}`))

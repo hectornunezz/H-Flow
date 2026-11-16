@@ -30,7 +30,7 @@ export async function generateMarketingVideo(
     return;
   }
 
-  const { topic, audience, tone, durationSeconds } = body;
+  const { topic, audience, tone, durationSeconds, aspectRatio } = body;
   if ("batchSize" in body) {
     response.status(400).json({
       error: { message: "batchSize is no longer supported; generate one video per request" },
@@ -68,6 +68,13 @@ export async function generateMarketingVideo(
     return;
   }
 
+  if (aspectRatio !== undefined && aspectRatio !== "9:16" && aspectRatio !== "16:9") {
+    response.status(400).json({
+      error: { message: "aspectRatio must be either 9:16 or 16:9" },
+    });
+    return;
+  }
+
   const normalizedTopic = topic.trim().replace(/\s+/g, " ");
   const episodeId = randomUUID();
   try {
@@ -86,6 +93,9 @@ export async function generateMarketingVideo(
     await generateEpisode(episode.id, {
       publishToInstagram: false,
       ...(durationSeconds === undefined ? {} : { durationSeconds }),
+      ...(aspectRatio === undefined
+        ? {}
+        : { aspectRatio }),
     });
     const generatedEpisode = await prisma.marketingEpisode.findUnique({
       where: { id: episode.id },

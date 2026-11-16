@@ -1,6 +1,4 @@
-import { copyFile, mkdir, rename, rm, stat, writeFile } from "node:fs/promises";
-import { spawn } from "node:child_process";
-import { existsSync } from "node:fs";
+import { mkdir, rename, rm, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { prisma } from "./prisma.service";
 import {
@@ -8,13 +6,17 @@ import {
   videoMarketingService,
   type Transcription,
 } from "./videoMarketing.service";
+import {
+  renderHyperframesVideo,
+  type MarketingAspectRatio,
+  type MarketingCaption,
+} from "./hyperframesRenderer.service";
 import { instagramService } from "./instagram.service";
 import logger from "../utils/logger";
 import { runExclusiveVideoGeneration } from "./videoGenerationQueue.service";
 
 const POLL_INTERVAL_MS = 10_000;
 const MAX_EPISODES_PER_POLL = 1;
-const repositoryRoot = path.resolve(__dirname, "../../..");
 export function getMarketingStorageDirectory(): string {
   return path.resolve(
     process.env.MARKETING_STORAGE_DIR || path.join(process.cwd(), "storage", "marketing"),
@@ -28,88 +30,37 @@ export function getMarketingVideoDirectory(): string {
   );
 }
 
-export function getRemotionPublicDirectory(): string {
-  return path.resolve(
-    process.env.REMOTION_PUBLIC_DIR || path.join(repositoryRoot, "video-generador", "public"),
-  );
-}
-
 export async function renderMarketingVideo(
   script: string,
-  audioFileName: string,
-  publicDirectory: string,
+  audio: Buffer,
   outputPath: string,
   transcription: Transcription,
+  metadata: { topic: string; audience: string; tone: string },
+  options: { durationSeconds?: number; aspectRatio?: MarketingAspectRatio } = {},
 ): Promise<void> {
-  const backendRoot = path.resolve(__dirname, "../..");
-  const backendEntryPoint = path.join(backendRoot, "src", "remotion", "index.ts");
-  const repositoryEntryPoint = path.join(repositoryRoot, "src", "remotion", "index.ts");
-  const entryPoint = existsSync(backendEntryPoint) ? backendEntryPoint : repositoryEntryPoint;
-  const cliPath = path.join(backendRoot, "node_modules", "@remotion", "cli", "remotion-cli.js");
-  if (!existsSync(entryPoint)) {
-    throw new Error(`Remotion entry point not found: ${entryPoint}`);
-  }
-  if (!existsSync(cliPath)) {
-    throw new Error(`Remotion CLI not found: ${cliPath}`);
-  }
+  const captions: MarketingCaption[] =
+    transcription.segments.length > 0
+      ? transcription.segments.map(({ text, start, end }) => ({ text, start, end }))
+      : transcription.words.map(({ word, start, end }) => ({ text: word, start, end }));
 
-  const props = JSON.stringify({
-    text: script,
-    audioSrc: `audio/${audioFileName}`,
-    captions:
-      transcription.words.length > 0
-        ? transcription.words.map(({ word, start, end }) => ({ text: word, start, end }))
-        : transcription.segments.map(({ text, start, end }) => ({ text, start, end })),
+  await renderHyperframesVideo({
+    script,
+    audio,
+    captions,
+    ...metadata,
+    outputPath,
+    ...options,
     callToAction: TRAINER_CALL_TO_ACTION,
   });
-  const propsPath = `${outputPath}.props.json`;
-  await writeFile(propsPath, props, { flag: "wx" });
-  try {
-    await new Promise<void>((resolve, reject) => {
-      const renderer = spawn(
-        process.execPath,
-        [
-          cliPath,
-          "render",
-          entryPoint,
-          "DopaminergicVideo",
-          outputPath,
-          `--props=${propsPath}`,
-          `--public-dir=${publicDirectory}`,
-          "--codec=h264",
-          "--crf=23",
-          "--pixel-format=yuv420p",
-          "--concurrency=1",
-          "--overwrite",
-        ],
-        { cwd: backendRoot, stdio: ["ignore", "ignore", "pipe"] },
-      );
-      let errorOutput = "";
-      renderer.stderr.setEncoding("utf8");
-      renderer.stderr.on("data", (chunk: string) => {
-        errorOutput = `${errorOutput}${chunk}`.slice(-4000);
-      });
-      renderer.once("error", reject);
-      renderer.once("close", (code) => {
-        if (code === 0) {
-          resolve();
-          return;
-        }
-        reject(new Error(`Remotion render failed (${code}): ${errorOutput.trim() || "no details"}`));
-      });
-    });
-    const renderedVideo = await stat(outputPath);
-    if (!renderedVideo.isFile() || renderedVideo.size === 0) {
-      throw new Error("Remotion did not produce a valid MP4 file");
-    }
-  } finally {
-    await rm(propsPath, { force: true });
-  }
 }
 
 export async function generateEpisode(
   episodeId: string,
-  options: { publishToInstagram?: boolean; durationSeconds?: number } = {},
+  options: {
+    publishToInstagram?: boolean;
+    durationSeconds?: number;
+    aspectRatio?: MarketingAspectRatio;
+  } = {},
 ): Promise<void> {
   await runExclusiveVideoGeneration(`marketing_episode:${episodeId}`, async () => {
     const episode = await prisma.marketingEpisode.findUnique({ where: { id: episodeId } });
@@ -135,28 +86,20 @@ export async function generateEpisode(
       const videoFileName = `${episode.id}.mp4`;
       const videoDestination = path.join(videoDirectory, videoFileName);
       const temporaryVideo = path.join(videoDirectory, `${episode.id}.tmp.mp4`);
-      const publicDirectory = getRemotionPublicDirectory();
-      const publicAudioDirectory = path.join(publicDirectory, "audio");
-      const publicAudioPath = path.join(publicAudioDirectory, audioFileName);
       await mkdir(storageDirectory, { recursive: true });
       await mkdir(videoDirectory, { recursive: true });
-      await mkdir(publicAudioDirectory, { recursive: true });
 
       try {
         await writeFile(temporaryFile, assets.audio, { flag: "wx" });
         await rename(temporaryFile, destination);
-        await copyFile(destination, publicAudioPath);
-        try {
-          await renderMarketingVideo(
-            assets.script,
-            audioFileName,
-            publicDirectory,
-            temporaryVideo,
-            assets.transcription,
-          );
-        } finally {
-          await rm(publicAudioPath, { force: true });
-        }
+        await renderMarketingVideo(
+          assets.script,
+          assets.audio,
+          temporaryVideo,
+          assets.transcription,
+          { topic: episode.topic, audience: episode.audience, tone: episode.tone },
+          options,
+        );
         await rename(temporaryVideo, videoDestination);
         await prisma.marketingEpisode.update({
           where: { id: episode.id },
@@ -194,7 +137,6 @@ export async function generateEpisode(
         await rm(temporaryFile, { force: true });
         await rm(destination, { force: true });
         await rm(temporaryVideo, { force: true });
-        await rm(publicAudioPath, { force: true });
         throw error;
       }
     } catch (error) {

@@ -2,11 +2,11 @@
 
 H-FLOW is a B2B platform for fitness coaches. It combines an Express and
 Prisma API, a Next.js trainer dashboard, PostgreSQL, athlete portals,
-AI-assisted planning, and Remotion-powered marketing videos.
+AI-assisted planning, and Hyperframes-powered marketing videos.
 
 ## Requirements
 
-- Node.js 20 or newer and npm
+- Node.js 22 or newer and npm
 - Docker Compose for the quickest full-stack setup, or PostgreSQL for local
   development
 
@@ -66,8 +66,9 @@ an HTTPS address reachable by Instagram to publish Reels.
 Marketing audio uses the configured ElevenLabs voice and multilingual model.
 Set `ELEVENLABS_VOICE_ID` and `ELEVENLABS_API_KEY`; the example environment
 files include defaults for Spanish, MP3 quality, and natural voice settings.
-ElevenLabs character timestamps drive the Remotion captions directly, avoiding
-a separate transcription step and keeping subtitles on the generated audio.
+ElevenLabs character timestamps drive the Hyperframes captions directly,
+avoiding a separate transcription step and keeping subtitles synchronized with
+the generated audio.
 For strict manual one-video generation, run `npm run marketing:manual` from an
 interactive terminal. `bot.js` requires typing `GENERAR`, prints the exact
 script character count, and enforces a persistent local budget initialized at
@@ -122,6 +123,13 @@ WHERE id = (
 );
 ```
 
+The root application registration form is available at `/register`. It creates
+the initial coach profile on the server with beta access and subscriptions
+disabled. If email confirmation is enabled in Supabase, users are prompted to
+confirm their address before signing in; otherwise they land on `/beta-pending`.
+The server action talks directly to the configured Supabase URL, so this flow
+does not depend on the separate backend or browser CORS settings.
+
 The standalone JWT backend stores the same flag on `Trainer`; its Prisma
 migration runs with the existing migration Job/Compose startup. To approve a
 trainer there, update `"Trainer".is_beta_tester` through an administrator-only
@@ -172,13 +180,16 @@ generation, tests, lint, and production builds on every push.
 | `npm run build:backend` | Generate Prisma Client and build the API |
 | `npm run build:frontend` | Build the frontend |
 
-## Remotion
+## Marketing video rendering
 
-Marketing episodes render MP4 videos with the `DopaminergicVideo` Remotion
-composition. The backend copies generated audio to the Remotion public assets
-directory while rendering; finished videos are streamed through the
-authenticated marketing API. See [`src/remotion/README.md`](./src/remotion/README.md)
-for manual rendering instructions.
+Marketing episodes use Hyperframes to render local HTML/CSS/GSAP compositions
+to MP4. The reusable template is in [`src/hyperframes/marketing-template.html`](./src/hyperframes/marketing-template.html);
+the renderer embeds the generated voiceover and timed captions into an isolated
+temporary project before storing the finished MP4 in `storage/marketing/videos`.
+The authenticated API accepts `aspectRatio: "9:16"` (default) or `"16:9"`.
+Hyperframes, GSAP, FFmpeg and Node.js 22+ are required. The backend Docker image
+installs FFmpeg and the matching Hyperframes browser during build. Manual
+single-video generation remains available via `npm run marketing:manual`.
 
 ## Kubernetes
 

@@ -2,6 +2,9 @@
   "name": "mi-proyecto",
   "version": "0.1.0",
   "private": true,
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "install:all": "concurrently --kill-others-on-fail --names backend,frontend \"npm --prefix hflow-backend ci\" \"npm --prefix hflow-frontend ci\"",
     "build:backend": "npm --prefix hflow-backend run prisma:generate && npm --prefix hflow-backend run build",
@@ -18,23 +21,16 @@
     "prestart": "node scripts/check-env.mjs",
     "check-env": "node scripts/check-env.mjs",
     "marketing:manual": "node bot.js",
-    "remotion:studio": "remotion studio src/remotion/index.ts",
-    "render:video": "node src/remotion/render.mjs",
     "lint": "eslint",
     "test": "jest"
   },
   "dependencies": {
-    "@remotion/bundler": "4.0.540",
-    "@remotion/cli": "4.0.540",
-    "@remotion/media-utils": "4.0.540",
-    "@remotion/renderer": "4.0.540",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.118.0",
     "lucide-react": "^1.59.0",
     "next": "16.3.8",
     "react": "19.2.8",
     "react-dom": "19.2.8",
-    "remotion": "4.0.540",
     "sonner": "^2.0.8",
     "stripe": "^23.0.0",
     "web-push": "^3.6.7"

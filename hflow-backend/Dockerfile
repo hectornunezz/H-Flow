@@ -1,4 +1,4 @@
-FROM node:20-bookworm-slim AS build
+FROM node:22-bookworm-slim AS build
 
 WORKDIR /app/hflow-backend
 
@@ -12,7 +12,7 @@ RUN npx prisma generate \
     && npm run build \
     && test -s dist/index.js
 
-FROM node:20-bookworm-slim AS runtime
+FROM node:22-bookworm-slim AS runtime
 
 ENV NODE_ENV=production \
     PORT=3000 \
@@ -22,6 +22,7 @@ ENV NODE_ENV=production \
 RUN apt-get update \
     && apt-get install -y --no-install-recommends \
       ca-certificates \
+      ffmpeg \
       fonts-liberation \
       libasound2 \
       libatk-bridge2.0-0 \
@@ -56,12 +57,12 @@ RUN npm ci --omit=dev --no-audit --no-fund \
     && npx prisma generate
 
 COPY --from=build /app/hflow-backend/dist ./dist
-COPY src/remotion /app/hflow-backend/src/remotion
-RUN mkdir -p logs uploads storage/marketing/videos /app/video-generador/public/audio \
-    && chown -R node:node /app/hflow-backend /app/video-generador /home/node
+COPY src/hyperframes /app/src/hyperframes
+RUN mkdir -p logs uploads storage/marketing/videos \
+    && chown -R node:node /app/hflow-backend /app/src/hyperframes /home/node
 
 USER node
-RUN ./node_modules/.bin/remotion browser ensure
+RUN node ./node_modules/hyperframes/bin/hyperframes.mjs browser ensure
 
 EXPOSE 3000
 
