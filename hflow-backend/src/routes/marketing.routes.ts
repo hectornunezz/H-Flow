@@ -1,20 +1,9 @@
-import { Router } from "express";
-import {
-  generateMarketingVideo,
-  getMarketingEpisodeVideo,
-} from "../controllers/marketing.controller";
-import {
-  getMarketingEpisodeAudio,
-  listMarketingEpisodes,
-  scheduleMarketingEpisode,
-} from "../controllers/marketingSchedule.controller";
+import { Router } from 'express';
+import { createCampaign } from '../controllers/marketing.controller';
 
 const router = Router();
 
-router.post("/generate", generateMarketingVideo);
-router.post("/schedule", scheduleMarketingEpisode);
-router.get("/episodes", listMarketingEpisodes);
-router.get("/episodes/:episodeId/video", getMarketingEpisodeVideo);
-router.get("/episodes/:episodeId/audio", getMarketingEpisodeAudio);
+// Ruta limpia que usa el nuevo controlador
+router.post('/generate', createCampaign);
 
 export default router;

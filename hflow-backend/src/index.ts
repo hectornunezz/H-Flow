@@ -20,10 +20,6 @@ import profileRoutes from "./routes/profile.routes";
 import paymentRoutes from "./routes/payment.routes";
 import workoutRoutes from "./routes/workout.routes";
 import { uploadDirectory } from "./middlewares/upload.middleware";
-import {
-  getMarketingVideoDirectory,
-  startMarketingScheduler,
-} from "./services/marketingScheduler.service";
 import logger from "./utils/logger";
 import { startDailyRemindersCron } from "./cron/dailyReminders.cron";
 import { swaggerSpec } from "./config/swagger";
