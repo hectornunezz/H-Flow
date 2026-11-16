@@ -70,9 +70,11 @@ export default function MarketingPage() {
   const [topic, setTopic] = useState("");
   const [audience, setAudience] = useState("");
   const [tone, setTone] = useState("");
+  const [generatedEpisodeId, setGeneratedEpisodeId] = useState<string | null>(null);
+  const [videoUrl, setVideoUrl] = useState<string | null>(null);
   const [scheduledAt, setScheduledAt] = useState("");
-  const [isLoading, setIsLoading] = useState(true);
-  const [isScheduling, setIsScheduling] = useState(false);
+  const [isLoadingEpisodes, setIsLoadingEpisodes] = useState(true);
+  const [isLoading, setIsLoading] = useState(false);
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [error, setError] = useState("");
   const [formError, setFormError] = useState("");
@@ -103,7 +105,7 @@ export default function MarketingPage() {
           : "No se pudieron cargar los episodios.",
       );
     } finally {
-      setIsLoading(false);
+      setIsLoadingEpisodes(false);
       setIsRefreshing(false);
     }
   }, []);
@@ -142,7 +144,7 @@ export default function MarketingPage() {
     event.preventDefault();
     setFormError("");
     setSuccess("");
-    setIsScheduling(true);
+    setIsLoading(true);
 
     try {
       const isImmediate = !scheduledAt;
@@ -164,6 +166,10 @@ export default function MarketingPage() {
         response.data,
         ...current.filter((episode) => episode.id !== response.data.id),
       ]);
+      if (isImmediate) {
+        setGeneratedEpisodeId(response.data.id);
+        setVideoUrl(response.data.videoUrl);
+      }
       setTopic("");
       setAudience("");
       setTone("");
@@ -185,7 +191,7 @@ export default function MarketingPage() {
           : "No se pudo programar el Reel.",
       );
     } finally {
-      setIsScheduling(false);
+      setIsLoading(false);
     }
   }
 
@@ -222,7 +228,7 @@ export default function MarketingPage() {
     }
   }
 
-  async function loadVideo(episode: MarketingEpisode) {
+  const loadVideo = useCallback(async (episode: MarketingEpisode) => {
     if (!episode.videoUrl || videoSourcesRef.current.has(episode.id)) return;
     setLoadingVideoId(episode.id);
     setError("");
@@ -243,7 +249,15 @@ export default function MarketingPage() {
     } finally {
       setLoadingVideoId(null);
     }
-  }
+  }, []);
+
+  useEffect(() => {
+    if (!generatedEpisodeId) return;
+    const episode = episodes.find((item) => item.id === generatedEpisodeId);
+    if (!episode?.videoUrl) return;
+    setVideoUrl(episode.videoUrl);
+    void loadVideo(episode);
+  }, [episodes, generatedEpisodeId, loadVideo]);
 
   async function downloadVideo(episode: MarketingEpisode) {
     if (!episode.videoUrl) return;
@@ -291,7 +305,7 @@ export default function MarketingPage() {
         </div>
         <button
           className="inline-flex h-10 items-center justify-center gap-2 self-start rounded-lg border border-line px-3 text-sm text-muted transition hover:border-white/20 hover:text-white disabled:opacity-50 sm:self-auto"
-          disabled={isRefreshing || isLoading}
+          disabled={isRefreshing || isLoadingEpisodes}
           onClick={() => void refreshEpisodes()}
           type="button"
         >
@@ -408,26 +422,59 @@ export default function MarketingPage() {
               </p>
             )}
             <button
-              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-gradient-to-r from-[#f97316] to-[#ea580c] px-4 text-sm font-semibold text-[#030712] transition hover:brightness-110 disabled:cursor-not-allowed disabled:opacity-60"
-              disabled={isScheduling}
+              className="inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-[#FF8C00] bg-[#0A0A0A] px-4 text-sm font-semibold text-white transition hover:shadow-[0_0_15px_rgba(255,140,0,0.45)] disabled:cursor-not-allowed disabled:opacity-60"
+              disabled={isLoading}
               type="submit"
             >
-              {isScheduling ? (
+              {isLoading ? (
                 <LoaderCircle className="animate-spin" size={17} />
               ) : (
                 <Plus size={17} />
               )}
-              {isScheduling
+              {isLoading
                 ? scheduledAt
                   ? "Programando..."
-                  : "Generando Reel..."
+                  : "Generando..."
                 : scheduledAt
                   ? "Programar Reel"
-                  : "Generar Reel"}
+                  : "Generar Vídeo Automático"}
             </button>
           </div>
         </form>
       </section>
+
+      {videoUrl && generatedEpisodeId && (
+        <section aria-label="Vídeo generado" className="mt-6 space-y-3">
+          {videoSources[generatedEpisodeId] ? (
+            <video
+              autoPlay
+              className="max-h-[560px] w-full rounded-2xl bg-black object-contain shadow-[0_0_15px_rgba(255,140,0,0.5)]"
+              controls
+              loop
+              src={videoSources[generatedEpisodeId]}
+            >
+              Tu navegador no admite la reproducción de vídeo.
+            </video>
+          ) : (
+            <div className="grid min-h-40 place-items-center rounded-2xl border border-line bg-card text-sm text-muted">
+              {loadingVideoId === generatedEpisodeId ? "Cargando vídeo..." : "El vídeo se está generando..."}
+            </div>
+          )}
+          {videoSources[generatedEpisodeId] && (
+            <button
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-[#FF8C00]/70 bg-[#0A0A0A] px-4 text-sm font-medium text-white transition hover:shadow-[0_0_12px_rgba(255,140,0,0.35)] disabled:opacity-50"
+              disabled={downloadingVideoId === generatedEpisodeId}
+              onClick={() => {
+                const episode = episodes.find((item) => item.id === generatedEpisodeId);
+                if (episode) void downloadVideo(episode);
+              }}
+              type="button"
+            >
+              {downloadingVideoId === generatedEpisodeId ? "Descargando..." : "Descargar MP4"}
+            </button>
+          )}
+        </section>
+      )}
 
       <section className="mt-8">
         <header className="mb-4 flex items-center justify-between gap-3">
@@ -444,7 +491,7 @@ export default function MarketingPage() {
           </span>
         </header>
 
-        {isLoading ? (
+        {isLoadingEpisodes ? (
           <div className="grid min-h-48 place-items-center rounded-2xl border border-line bg-card">
             <div className="flex items-center gap-2 text-sm text-muted">
               <LoaderCircle className="animate-spin text-accent" size={17} />
