@@ -87,7 +87,7 @@ app.use("/api/athlete-portal", athletePortalRoutes);
 app.use("/uploads", express.static(uploadDirectory, { dotfiles: "deny", index: false }));
 app.use(
   "/marketing-media",
-  express.static(getMarketingVideoDirectory(), {
+  express.static('./storage/marketing', {
     dotfiles: "deny",
     index: false,
     setHeaders: (response, filePath) => {
@@ -116,6 +116,6 @@ app.use(errorHandler);
 
 app.listen(port, () => {
   logger.info(`H-Flow backend listening on port ${port}`);
-  startMarketingScheduler();
+  //startMarketingScheduler();
   startDailyRemindersCron();
 });

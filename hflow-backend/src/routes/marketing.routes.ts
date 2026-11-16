@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import { createCampaign } from '../controllers/marketing.controller';
+import { triggerSchedule } from '../controllers/marketingSchedule.controller';
 
 const router = Router();
 
-// Ruta limpia que usa el nuevo controlador
+// Rutas limpias
 router.post('/generate', createCampaign);
+router.post('/schedule', triggerSchedule);
 
 export default router;
