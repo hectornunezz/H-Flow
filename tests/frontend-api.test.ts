@@ -1,4 +1,4 @@
-import { apiFetch, TOKEN_STORAGE_KEY } from "../hflow-frontend/src/lib/api";
+import { apiFetch, API_BASE_URL, TOKEN_STORAGE_KEY } from "../hflow-frontend/src/lib/api";
 
 describe("frontend API client", () => {
   const originalWindowDescriptor = Object.getOwnPropertyDescriptor(globalThis, "window");
@@ -30,13 +30,17 @@ describe("frontend API client", () => {
     }
   });
 
+  it("defaults to the configured backend API base URL", () => {
+    expect(API_BASE_URL).toBe("http://localhost:5000/api");
+  });
+
   it("adds the saved bearer token to API requests", async () => {
     const result = await apiFetch<{ data: { active: boolean } }>("/dashboard/stats");
 
     expect(result.data.active).toBe(true);
     expect(fetchMock).toHaveBeenCalledTimes(1);
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      "http://localhost:3000/api/dashboard/stats",
+      "http://localhost:5000/api/dashboard/stats",
     );
     const requestOptions = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined;
     expect(new Headers(requestOptions?.headers).get("Authorization")).toBe(
@@ -52,8 +56,18 @@ describe("frontend API client", () => {
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
-      "http://localhost:3000/api/auth/register",
+      "http://localhost:5000/api/auth/register",
       expect.objectContaining({ method: "POST" }),
     );
+  });
+
+  it("surfaces a clear connection error when the backend is unreachable", async () => {
+    fetchMock.mockRejectedValueOnce(new TypeError("fetch failed"));
+
+    await expect(apiFetch("/auth/register", { method: "POST" })).rejects.toMatchObject({
+      name: "ApiError",
+      status: 0,
+      message: "No se puede conectar con el servidor. Comprueba que el backend esté activo",
+    });
   });
 });

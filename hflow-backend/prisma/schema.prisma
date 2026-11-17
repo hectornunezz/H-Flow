@@ -14,6 +14,9 @@ model Trainer {
   name                         String
   avatarUrl                    String?
   isBetaTester                 Boolean            @default(false) @map("is_beta_tester")
+  emailVerifiedAt              DateTime?          @map("email_verified_at")
+  emailVerificationCodeHash    String?            @map("email_verification_code_hash")
+  emailVerificationExpiresAt   DateTime?          @map("email_verification_expires_at")
   createdAt                    DateTime           @default(now())
   stripeCustomerId             String?            @unique
   stripeSubscriptionId         String?            @unique

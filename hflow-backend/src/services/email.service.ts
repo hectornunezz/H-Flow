@@ -111,6 +111,19 @@ export class EmailService {
     });
   }
 
+  async sendVerificationCodeEmail(email: string, name: string, code: string): Promise<void> {
+    const safeCode = escapeHtml(code);
+    await this.send(email, {
+      subject: "Verifica tu correo para la Beta de H-Flow",
+      text: `Hola ${name},\n\nTu código de verificación de 6 dígitos es: ${code}\n\nCaduca en 15 minutos. Si no creaste una cuenta en H-Flow, ignora este mensaje.\n\nEl equipo de H-Flow`,
+      html: renderEmail({
+        preheader: "Introduce este código para activar tu cuenta beta.",
+        heading: `Verifica tu correo, ${name}`,
+        body: `<p style="margin:0 0 20px;font-size:16px;line-height:1.7;color:#526174">Usa este código de 6 dígitos para activar tu cuenta en la Beta Cerrada de H-Flow. Caduca en 15 minutos.</p><p style="margin:0;font-size:32px;letter-spacing:0.35em;font-weight:700;color:#172554">${safeCode}</p>`,
+      }),
+    });
+  }
+
   async sendPasswordReset(email: string, token: string): Promise<void> {
     const resetUrl = new URL(requireEnv("PASSWORD_RESET_URL"));
     if (!["http:", "https:"].includes(resetUrl.protocol)) {

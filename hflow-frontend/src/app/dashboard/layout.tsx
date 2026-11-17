@@ -102,12 +102,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
   if (!isAuthorized) {
     return (
-      <main className="grid min-h-screen place-items-center bg-background px-5 text-center">
+      <main className="grid min-h-screen place-items-center bg-[#0A0A0A] px-5 text-center">
         {authorizationFailed ? (
           <div className="max-w-sm">
-            <p className="text-sm text-muted">No se pudo verificar el acceso a H-FLOW.</p>
+            <p className="text-sm text-neutral-400">No se pudo verificar el acceso a H-FLOW.</p>
             <button
-              className="mt-4 rounded-lg bg-gradient-to-r from-orange-500 to-orange-600 px-4 py-2 text-sm font-semibold text-[#030712]"
+              className="mt-4 rounded-lg bg-[#FF8C00] px-4 py-2 text-sm font-semibold text-[#0A0A0A] shadow-glow transition-all duration-300 hover:bg-[#e07b00]"
               onClick={() => window.location.reload()}
               type="button"
             >
@@ -115,34 +115,34 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             </button>
           </div>
         ) : (
-          <div className="h-7 w-7 animate-spin rounded-full border-2 border-accent border-t-transparent" />
+          <div className="h-7 w-7 animate-spin rounded-full border-2 border-[#FF8C00] border-t-transparent" />
         )}
       </main>
     );
   }
 
   return (
-    <div className="min-h-screen bg-background lg:flex">
-      <aside className="flex w-full shrink-0 flex-col border-b border-line bg-card px-4 py-4 lg:fixed lg:inset-y-0 lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
+    <div className="min-h-screen bg-[#0A0A0A] lg:flex">
+      <aside className="flex w-full shrink-0 flex-col border-b border-neutral-800 bg-[#111111]/90 px-4 py-4 backdrop-blur-xl lg:fixed lg:inset-y-0 lg:w-64 lg:border-b-0 lg:border-r lg:px-5 lg:py-6">
         <Link
           href="/dashboard"
           aria-label="H-FLOW, inicio del panel"
           className="group flex items-center gap-3 px-1"
         >
-          <span className="grid h-11 w-11 place-items-center rounded-xl bg-fire text-background shadow-lg shadow-accent/20 transition group-hover:shadow-accent/30">
+          <span className="grid h-11 w-11 place-items-center rounded-xl bg-[#FF8C00] text-[#0A0A0A] shadow-glow transition-all duration-300 group-hover:shadow-glow-lg">
             <HFlowMark />
           </span>
           <span className="min-w-0">
-            <span className="block text-base font-black tracking-[0.18em] text-foreground">
+            <span className="block font-display text-base font-bold tracking-[0.18em] text-[#EAEAEA]">
               H-FLOW
             </span>
-            <span className="mt-0.5 block text-[9px] font-semibold tracking-[0.19em] text-muted">
+            <span className="mt-0.5 block text-[9px] font-semibold tracking-[0.19em] text-neutral-500">
               HEALTH PERFORMANCE
             </span>
           </span>
         </Link>
 
-        <p className="mb-2 mt-7 hidden px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-muted/70 lg:block">
+        <p className="mb-2 mt-7 hidden px-3 text-[10px] font-bold uppercase tracking-[0.18em] text-neutral-600 lg:block">
           Workspace
         </p>
         <nav
@@ -158,23 +158,27 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 key={href}
                 href={href}
                 aria-current={active ? "page" : undefined}
-                className={`group/nav relative flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition lg:px-3.5 ${
+                className={`group/nav relative flex shrink-0 items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all duration-300 lg:px-3.5 ${
                   active
-                    ? "bg-accent/[0.08] text-foreground"
-                    : "text-muted hover:bg-surface hover:text-foreground"
+                    ? "bg-[#FF8C00]/[0.08] text-[#EAEAEA]"
+                    : "text-neutral-400 hover:bg-white/[0.03] hover:text-[#EAEAEA]"
                 }`}
               >
                 {active && (
                   <span
                     aria-hidden="true"
-                    className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-fire"
+                    className="absolute inset-y-2 left-0 w-0.5 rounded-full bg-[#FF8C00]"
                   />
                 )}
                 <Icon
                   aria-hidden="true"
                   size={17}
                   strokeWidth={active ? 2.2 : 1.8}
-                  className={active ? "text-accent" : "transition-colors group-hover/nav:text-accent"}
+                  className={
+                    active
+                      ? "text-[#FF8C00]"
+                      : "transition-colors duration-300 group-hover/nav:text-[#FF8C00]"
+                  }
                 />
                 {label}
               </Link>
@@ -182,26 +186,26 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
           })}
         </nav>
 
-        <div className="mt-5 hidden border-t border-line pt-5 lg:mt-auto lg:block">
-          <div className="rounded-xl border border-line bg-background/70 p-4">
+        <div className="mt-5 hidden border-t border-neutral-800 pt-5 lg:mt-auto lg:block">
+          <div className="rounded-xl border border-neutral-800 bg-[#0A0A0A]/70 p-4 backdrop-blur-md">
             <div className="flex items-center gap-2">
-              <span className="h-1.5 w-1.5 rounded-full bg-accent shadow-[0_0_10px_var(--accent)]" />
-              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-muted">
+              <span className="h-1.5 w-1.5 rounded-full bg-[#FF8C00] shadow-glow" />
+              <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
                 H-FLOW Performance
               </span>
             </div>
-            <p className="mt-3 text-sm font-medium leading-5 text-foreground">
-              Coaching, con datos en contexto.
+            <p className="mt-3 text-sm font-medium leading-5 text-[#EAEAEA]">
+              Control absoluto. Cero prisas.
             </p>
             <div
               aria-hidden="true"
-              className="mt-4 h-px bg-gradient-to-r from-accent via-accent-strong/50 to-transparent"
+              className="mt-4 h-px bg-gradient-to-r from-[#FF8C00] via-[#FF8C00]/40 to-transparent"
             />
           </div>
         </div>
 
         <button
-          className="mt-4 hidden items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-muted transition hover:bg-surface hover:text-foreground lg:flex"
+          className="mt-4 hidden items-center gap-3 rounded-xl px-3.5 py-3 text-sm text-neutral-400 transition-all duration-300 hover:bg-white/[0.03] hover:text-[#EAEAEA] lg:flex"
           onClick={signOut}
           type="button"
         >
@@ -213,7 +217,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
       <main className="min-w-0 flex-1 px-4 py-6 sm:px-7 lg:ml-64 lg:px-10 lg:py-9">
         <div className="mx-auto w-full max-w-6xl">{children}</div>
         <button
-          className="mt-8 inline-flex items-center gap-2 text-sm text-muted hover:text-foreground lg:hidden"
+          className="mt-8 inline-flex items-center gap-2 text-sm text-neutral-500 transition-all duration-300 hover:text-[#EAEAEA] lg:hidden"
           onClick={signOut}
           type="button"
         >

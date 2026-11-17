@@ -4,15 +4,18 @@
 
 :root {
   color-scheme: dark;
-  --background: #030712;
-  --surface: #080f1c;
-  --card: #0b1220;
-  --foreground: #f8fafc;
-  --muted: #94a3b8;
-  --accent: #f97316;
-  --accent-hover: #fb923c;
-  --accent-strong: #ea580c;
-  --border: rgba(148, 163, 184, 0.14);
+  --background: #0a0a0a;
+  --surface: #111111;
+  --card: #111111;
+  --foreground: #eaeaea;
+  --muted: #a3a3a3;
+  --accent: #ff8c00;
+  --accent-hover: #e07b00;
+  --accent-strong: #cc7000;
+  --border: rgba(38, 38, 38, 1);
+  --glow: 0 0 20px rgba(255, 140, 0, 0.3);
+  --font-syne: "Syne", "Avenir Next", "Segoe UI", sans-serif;
+  --font-manrope: "Manrope", "Avenir Next", "Segoe UI", sans-serif;
 }
 
 * {
@@ -22,16 +25,25 @@
 html {
   min-height: 100%;
   background: var(--background);
+  scroll-behavior: smooth;
 }
 
 body {
   min-height: 100vh;
   margin: 0;
   background:
-    radial-gradient(ellipse at 86% 0%, rgba(249, 115, 22, 0.09), transparent 34rem),
+    radial-gradient(ellipse at 78% -10%, rgba(255, 140, 0, 0.12), transparent 42rem),
+    radial-gradient(ellipse at 8% 20%, rgba(255, 140, 0, 0.04), transparent 28rem),
     var(--background);
   color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: var(--font-manrope), "Segoe UI", sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: var(--font-syne), var(--font-manrope), sans-serif;
 }
 
 button,
@@ -40,6 +52,58 @@ a {
 }
 
 ::selection {
-  background: rgba(249, 115, 22, 0.3);
+  background: rgba(255, 140, 0, 0.35);
   color: #fff;
+}
+
+/* Minimal custom scrollbar */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 140, 0, 0.35) transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: rgba(255, 140, 0, 0.28);
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: content-box;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 140, 0, 0.5);
+  background-clip: content-box;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .glass-panel {
+    border: 1px solid rgba(38, 38, 38, 0.9);
+    background: rgba(17, 17, 17, 0.72);
+    backdrop-filter: blur(20px);
+  }
+
+  .hflow-glow {
+    box-shadow: var(--glow);
+  }
+
+  .hover-lift {
+    transition: all 300ms ease-out;
+  }
+
+  .hover-lift:hover {
+    transform: translateY(-2px);
+    border-color: rgba(255, 140, 0, 0.4);
+  }
 }

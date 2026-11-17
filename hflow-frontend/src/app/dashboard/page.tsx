@@ -1,13 +1,13 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   Activity,
+  AlertTriangle,
   ArrowDownRight,
   ArrowRight,
   ArrowUpRight,
-  AlertTriangle,
   CalendarDays,
   CheckCircle2,
   Download,
@@ -18,6 +18,11 @@ import {
   DashboardErrorState,
   DashboardSkeleton,
 } from "@/components/dashboard-feedback";
+import {
+  AthleteCommandPanel,
+  type CommandAthlete,
+} from "@/components/dashboard/athlete-command-panel";
+import { MetricCard } from "@/components/dashboard/metric-card";
 
 type Athlete = {
   id: string;
@@ -75,6 +80,68 @@ function formatPercentage(value: number | null): string {
     signDisplay: "always",
   }).format(value);
   return `${percentage}% frente al mes anterior`;
+}
+
+function buildCommandAthletes(
+  recentAthletes: Athlete[],
+  retentionAlerts: RetentionAlert[],
+): CommandAthlete[] {
+  const alertsById = new Map(retentionAlerts.map((alert) => [alert.id, alert]));
+  const fromRecent = recentAthletes.map((athlete): CommandAthlete => {
+    const alert = alertsById.get(athlete.id);
+    if (alert?.reasons.includes("no_active_plan")) {
+      return {
+        id: athlete.id,
+        name: athlete.name,
+        objective: athlete.objective,
+        status: "no_plan",
+        detail: "Asigna un plan para desbloquear seguimiento",
+      };
+    }
+    if (alert?.reasons.includes("no_recent_checkin")) {
+      return {
+        id: athlete.id,
+        name: athlete.name,
+        objective: athlete.objective,
+        status: "needs_feedback",
+        detail: alert.lastCheckInAt
+          ? `Sin check-in hace ${alert.daysSinceCheckIn} días`
+          : "Sin check-ins registrados",
+      };
+    }
+    if (athlete.isActive) {
+      return {
+        id: athlete.id,
+        name: athlete.name,
+        objective: athlete.objective,
+        status: "completed",
+        detail: "Actividad reciente dentro de rango",
+      };
+    }
+    return {
+      id: athlete.id,
+      name: athlete.name,
+      objective: athlete.objective,
+      status: "tracking",
+      detail: "Seguimiento en pausa",
+    };
+  });
+
+  const missingAlerts = retentionAlerts
+    .filter((alert) => !recentAthletes.some((athlete) => athlete.id === alert.id))
+    .map((alert): CommandAthlete => ({
+      id: alert.id,
+      name: alert.name,
+      objective: "Revisión pendiente",
+      status: alert.reasons.includes("no_active_plan") ? "no_plan" : "needs_feedback",
+      detail: alert.reasons.includes("no_active_plan")
+        ? "Sin plan asignado"
+        : alert.lastCheckInAt
+          ? `Sin check-in hace ${alert.daysSinceCheckIn} días`
+          : "Sin check-ins",
+    }));
+
+  return [...fromRecent, ...missingAlerts].slice(0, 8);
 }
 
 export default function DashboardPage() {
@@ -148,6 +215,14 @@ export default function DashboardPage() {
 
   const growth = stats?.growth.percentage ?? null;
   const isPositiveGrowth = growth !== null && growth >= 0;
+  const commandAthletes = useMemo(
+    () => buildCommandAthletes(stats?.recentAthletes ?? [], retentionAlerts),
+    [stats?.recentAthletes, retentionAlerts],
+  );
+  const completedCount = commandAthletes.filter((item) => item.status === "completed").length;
+  const urgentCount = commandAthletes.filter(
+    (item) => item.status === "needs_feedback" || item.status === "no_plan",
+  ).length;
 
   async function exportMonthlyReport() {
     setIsExporting(true);
@@ -180,23 +255,25 @@ export default function DashboardPage() {
     <div>
       <header className="flex flex-col justify-between gap-5 sm:flex-row sm:items-end">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-accent">
-            Panel de rendimiento
+          <p className="text-xs font-semibold uppercase tracking-[0.2em] text-[#FF8C00]">
+            Command Center
           </p>
-          <h1 className="mt-2 text-3xl font-semibold tracking-tight sm:text-4xl">Resumen</h1>
-          <p className="mt-2 text-sm text-muted">
-            El estado de tu equipo y su progreso reciente.
+          <h1 className="mt-2 font-display text-3xl font-semibold tracking-tight text-[#EAEAEA] sm:text-4xl">
+            Resumen
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-neutral-400">
+            Control absoluto del equipo: métricas estables, señales claras y cero ruido.
           </p>
         </div>
         <div className="flex flex-col gap-3 sm:items-end">
-          <div className="inline-flex items-center gap-2 text-xs text-muted">
+          <div className="inline-flex items-center gap-2 text-xs text-neutral-500">
             <CalendarDays size={15} />
             {new Intl.DateTimeFormat("es-ES", { month: "long", year: "numeric" }).format(new Date())}
           </div>
           <button
-            className="inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-card px-4 py-2.5 text-sm font-medium text-white transition hover:border-accent/50 hover:text-accent disabled:cursor-not-allowed disabled:opacity-60"
+            className="inline-flex items-center justify-center gap-2 rounded-xl border border-neutral-800 bg-[#111111] px-4 py-2.5 text-sm font-medium text-[#EAEAEA] transition-all duration-300 hover:border-[#FF8C00]/50 hover:text-[#FF8C00] disabled:cursor-not-allowed disabled:opacity-60"
             disabled={isExporting}
-            onClick={exportMonthlyReport}
+            onClick={() => void exportMonthlyReport()}
             type="button"
           >
             <Download size={16} />
@@ -224,76 +301,102 @@ export default function DashboardPage() {
         </div>
       )}
 
-      <section aria-label="Indicadores clave" className="mt-8 grid gap-4 sm:grid-cols-2">
-        <article className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted">Atletas activos</p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-accent/10 text-accent">
-              <Users size={18} />
-            </span>
-          </div>
-          <p className="mt-6 text-4xl font-semibold tracking-tight">
-            {isLoading ? (
+      <section aria-label="Indicadores clave" className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard
+          hint="Atletas activos en tu equipo"
+          icon={<Users size={18} />}
+          label="Atletas activos"
+          value={
+            isLoading ? (
               <DashboardSkeleton className="h-10 w-20" />
             ) : error ? (
-              <span className="text-muted">—</span>
+              <span className="text-neutral-500">—</span>
             ) : (
               stats?.activeAthletes ?? 0
-            )}
-          </p>
-          <p className="mt-2 text-xs text-muted">Atletas activos en tu equipo</p>
-        </article>
-
-        <article className="rounded-2xl border border-line bg-card p-5 sm:p-6">
-          <div className="flex items-center justify-between">
-            <p className="text-sm text-muted">Crecimiento mensual</p>
-            <span className="grid h-9 w-9 place-items-center rounded-xl bg-white/[0.05] text-accent">
-              <Activity size={18} />
+            )
+          }
+        />
+        <MetricCard
+          hint={
+            <span className="inline-flex items-center gap-1.5">
+              {growth !== null &&
+                (isPositiveGrowth ? (
+                  <ArrowUpRight className="text-emerald-400" size={14} />
+                ) : (
+                  <ArrowDownRight className="text-orange-300" size={14} />
+                ))}
+              {isLoading
+                ? "Calculando variación"
+                : error
+                  ? "Datos no disponibles"
+                  : formatPercentage(growth)}
             </span>
-          </div>
-          <p className="mt-6 text-4xl font-semibold tracking-tight">
-            {isLoading ? (
+          }
+          icon={<Activity size={18} />}
+          label="Crecimiento mensual"
+          value={
+            isLoading ? (
               <DashboardSkeleton className="h-10 w-24" />
             ) : error ? (
-              <span className="text-muted">—</span>
+              <span className="text-neutral-500">—</span>
             ) : growth === null ? (
-              <span className="text-2xl text-muted">N/D</span>
+              <span className="text-2xl text-neutral-500">N/D</span>
             ) : (
               <span className={isPositiveGrowth ? "text-emerald-400" : "text-orange-300"}>
                 {new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 }).format(growth)}%
               </span>
-            )}
-          </p>
-          <p className="mt-2 flex items-center gap-1.5 text-xs text-muted">
-            {growth !== null &&
-              (isPositiveGrowth ? (
-                <ArrowUpRight size={14} className="text-emerald-400" />
-              ) : (
-                <ArrowDownRight size={14} className="text-orange-300" />
-              ))}
-            {isLoading
-              ? "Calculando variación"
-              : error
-                ? "Datos no disponibles"
-                : formatPercentage(growth)}
-          </p>
-        </article>
+            )
+          }
+        />
+        <MetricCard
+          hint="Rutinas al día en el panel operativo"
+          icon={<CheckCircle2 size={18} />}
+          label="Rutinas al día"
+          value={
+            isLoading || isRetentionLoading ? (
+              <DashboardSkeleton className="h-10 w-16" />
+            ) : (
+              completedCount
+            )
+          }
+        />
+        <MetricCard
+          hint="Requieren feedback o plan"
+          icon={<AlertTriangle size={18} />}
+          label="Atención urgente"
+          value={
+            isLoading || isRetentionLoading ? (
+              <DashboardSkeleton className="h-10 w-16" />
+            ) : (
+              <span className={urgentCount > 0 ? "text-amber-300" : undefined}>{urgentCount}</span>
+            )
+          }
+        />
       </section>
+
+      <div className="mt-8">
+        <AthleteCommandPanel
+          athletes={commandAthletes}
+          error={error || retentionError}
+          isLoading={isLoading || isRetentionLoading}
+          onRetry={() => setReloadKey((value) => value + 1)}
+        />
+      </div>
 
       <section
         aria-labelledby="retention-alerts-heading"
-        className="mt-8 overflow-hidden rounded-2xl border border-amber-400/20 bg-card"
+        className="mt-8 overflow-hidden rounded-2xl border border-amber-400/20 bg-[#111111] shadow-deep"
       >
-        <header className="flex items-center justify-between gap-4 border-b border-line px-5 py-5 sm:px-6">
+        <header className="flex items-center justify-between gap-4 border-b border-neutral-800 px-5 py-5 sm:px-6">
           <div className="flex items-center gap-3">
             <span className="grid h-10 w-10 place-items-center rounded-xl bg-amber-400/10 text-amber-300">
               <AlertTriangle size={19} />
             </span>
             <div>
-              <h2 className="font-semibold" id="retention-alerts-heading">
-                Alertas de Retención ⚠️
+              <h2 className="font-display font-semibold text-[#EAEAEA]" id="retention-alerts-heading">
+                Alertas de retención
               </h2>
-              <p className="mt-1 text-xs text-muted">
+              <p className="mt-1 text-xs text-neutral-500">
                 Atletas sin check-in reciente o sin planes asignados
               </p>
             </div>
@@ -328,18 +431,20 @@ export default function DashboardPage() {
         ) : retentionAlerts.length === 0 ? (
           <div className="flex items-center gap-3 px-5 py-8 sm:px-6">
             <CheckCircle2 className="shrink-0 text-emerald-400" size={20} />
-            <p className="text-sm text-muted">No hay atletas en riesgo de retención en este momento.</p>
+            <p className="text-sm text-neutral-400">
+              No hay atletas en riesgo de retención en este momento.
+            </p>
           </div>
         ) : (
-          <ul className="divide-y divide-white/[0.06]">
+          <ul className="divide-y divide-neutral-800/80">
             {retentionAlerts.map((alert) => (
               <li
-                className="flex flex-col justify-between gap-3 px-5 py-4 sm:flex-row sm:items-center sm:px-6"
+                className="flex flex-col justify-between gap-3 px-5 py-4 transition-all duration-300 hover:bg-white/[0.02] sm:flex-row sm:items-center sm:px-6"
                 key={alert.id}
               >
                 <div className="min-w-0">
                   <Link
-                    className="font-medium text-white transition hover:text-accent"
+                    className="font-medium text-[#EAEAEA] transition-all duration-300 hover:text-[#FF8C00]"
                     href={`/dashboard/athletes/${encodeURIComponent(alert.id)}`}
                   >
                     {alert.name}
@@ -361,7 +466,7 @@ export default function DashboardPage() {
                 </div>
                 <Link
                   aria-label={`Ver perfil de ${alert.name}`}
-                  className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-muted transition hover:text-white"
+                  className="inline-flex w-fit items-center gap-1.5 text-xs font-medium text-neutral-500 transition-all duration-300 hover:text-[#EAEAEA]"
                   href={`/dashboard/athletes/${encodeURIComponent(alert.id)}`}
                 >
                   Ver atleta
@@ -373,21 +478,21 @@ export default function DashboardPage() {
         )}
       </section>
 
-      <section className="mt-8 overflow-hidden rounded-2xl border border-line bg-card">
-        <div className="flex flex-col justify-between gap-2 border-b border-line px-5 py-5 sm:flex-row sm:items-center sm:px-6">
+      <section className="mt-8 overflow-hidden rounded-2xl border border-neutral-800 bg-[#111111] shadow-deep">
+        <div className="flex flex-col justify-between gap-2 border-b border-neutral-800 px-5 py-5 sm:flex-row sm:items-center sm:px-6">
           <div>
-            <h2 className="font-semibold">Últimos atletas</h2>
-            <p className="mt-1 text-xs text-muted">Los cinco registros más recientes</p>
+            <h2 className="font-display font-semibold text-[#EAEAEA]">Últimos atletas</h2>
+            <p className="mt-1 text-xs text-neutral-500">Los cinco registros más recientes</p>
           </div>
           {stats && (
-            <span className="text-xs text-muted">
+            <span className="text-xs text-neutral-500">
               {stats.growth.thisMonthRegistrations} nuevos este mes
             </span>
           )}
         </div>
 
         {error ? (
-          <div className="px-5 py-8 text-sm text-muted">
+          <div className="px-5 py-8 text-sm text-neutral-500">
             Reintenta la carga del resumen para volver a consultar los atletas.
           </div>
         ) : isLoading ? (
@@ -402,14 +507,14 @@ export default function DashboardPage() {
           </div>
         ) : !stats?.recentAthletes.length ? (
           <div className="px-5 py-12 text-center">
-            <Users className="mx-auto text-muted" size={24} />
-            <p className="mt-3 text-sm font-medium">Todavía no hay atletas</p>
-            <p className="mt-1 text-xs text-muted">Cuando registres atletas, aparecerán aquí.</p>
+            <Users className="mx-auto text-neutral-500" size={24} />
+            <p className="mt-3 text-sm font-medium text-[#EAEAEA]">Todavía no hay atletas</p>
+            <p className="mt-1 text-xs text-neutral-500">Cuando registres atletas, aparecerán aquí.</p>
           </div>
         ) : (
           <div className="max-w-full overflow-x-auto overscroll-x-contain">
             <table className="w-full min-w-[620px] text-left text-sm">
-              <thead className="bg-white/[0.02] text-xs uppercase tracking-wide text-muted">
+              <thead className="bg-white/[0.02] text-xs uppercase tracking-wide text-neutral-500">
                 <tr>
                   <th className="px-6 py-3.5 font-medium">Atleta</th>
                   <th className="px-6 py-3.5 font-medium">Objetivo</th>
@@ -418,12 +523,17 @@ export default function DashboardPage() {
                   <th className="px-6 py-3.5 font-medium">Fecha de alta</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/[0.06]">
+              <tbody className="divide-y divide-neutral-800/80">
                 {stats.recentAthletes.map((athlete) => (
-                  <tr className="transition hover:bg-white/[0.02]" key={athlete.id}>
-                    <td className="px-6 py-4 font-medium text-white">{athlete.name}</td>
-                    <td className="max-w-[200px] truncate px-6 py-4 text-muted">{athlete.objective}</td>
-                    <td className="whitespace-nowrap px-6 py-4 text-muted">
+                  <tr
+                    className="transition-all duration-300 hover:bg-white/[0.02]"
+                    key={athlete.id}
+                  >
+                    <td className="px-6 py-4 font-medium text-[#EAEAEA]">{athlete.name}</td>
+                    <td className="max-w-[200px] truncate px-6 py-4 text-neutral-500">
+                      {athlete.objective}
+                    </td>
+                    <td className="whitespace-nowrap px-6 py-4 text-neutral-500">
                       {new Intl.NumberFormat("es-ES", { maximumFractionDigits: 1 }).format(
                         athlete.currentWeight,
                       )}{" "}
@@ -434,18 +544,18 @@ export default function DashboardPage() {
                         className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs ${
                           athlete.isActive
                             ? "bg-emerald-500/10 text-emerald-400"
-                            : "bg-white/[0.06] text-muted"
+                            : "bg-white/[0.06] text-neutral-500"
                         }`}
                       >
                         <span
                           className={`h-1.5 w-1.5 rounded-full ${
-                            athlete.isActive ? "bg-emerald-400" : "bg-gray-500"
+                            athlete.isActive ? "bg-emerald-400" : "bg-neutral-500"
                           }`}
                         />
                         {athlete.isActive ? "Activo" : "Inactivo"}
                       </span>
                     </td>
-                    <td className="whitespace-nowrap px-6 py-4 text-muted">
+                    <td className="whitespace-nowrap px-6 py-4 text-neutral-500">
                       {formatDate(athlete.createdAt)}
                     </td>
                   </tr>

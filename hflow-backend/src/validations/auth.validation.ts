@@ -23,3 +23,19 @@ export const loginTrainerSchema = z
     password,
   })
   .strict();
+
+export const verifyEmailSchema = z
+  .object({
+    email,
+    code: z
+      .string()
+      .trim()
+      .regex(/^\d{6}$/, { message: "Verification code must be exactly 6 digits" }),
+  })
+  .strict();
+
+export const resendVerificationSchema = z
+  .object({
+    email,
+  })
+  .strict();

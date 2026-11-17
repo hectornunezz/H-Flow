@@ -1,10 +1,33 @@
-const API_BASE_URL = (process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:3000/api").replace(
-  /\/+$/,
-  "",
-);
+function normalizeApiBaseUrl(raw: string): string {
+  const trimmed = raw.trim().replace(/\/+$/, "");
+  if (!trimmed) {
+    return "http://localhost:5000/api";
+  }
+
+  if (trimmed.startsWith("/")) {
+    return trimmed === "/" ? "/api" : trimmed;
+  }
+
+  if (/\/api$/i.test(trimmed)) {
+    return trimmed;
+  }
+
+  return `${trimmed}/api`;
+}
+
+const configuredApiBase =
+  process.env.NEXT_PUBLIC_API_URL?.trim() ||
+  process.env.NEXT_PUBLIC_BACKEND_URL?.trim() ||
+  process.env.API_URL?.trim() ||
+  "http://localhost:5000";
+
+export const API_BASE_URL = normalizeApiBaseUrl(configuredApiBase);
 
 export function apiMediaUrl(path: string): string {
-  const apiUrl = new URL(API_BASE_URL, typeof window === "undefined" ? "http://localhost" : window.location.origin);
+  const apiUrl = new URL(
+    API_BASE_URL,
+    typeof window === "undefined" ? "http://localhost" : window.location.origin,
+  );
   return new URL(path.startsWith("/") ? path : `/${path}`, apiUrl.origin).toString();
 }
 
@@ -21,6 +44,30 @@ export class ApiError extends Error {
   }
 }
 
+function isConnectionError(error: unknown): boolean {
+  if (!(error instanceof Error)) return false;
+  return (
+    error.name === "TypeError" ||
+    /fetch failed|failed to fetch|networkerror|load failed|econnrefused|enotfound/i.test(
+      error.message,
+    )
+  );
+}
+
+const CONNECTION_ERROR_MESSAGE =
+  "No se puede conectar con el servidor. Comprueba que el backend esté activo";
+
+function extractErrorMessage(payload: unknown, fallback: string): string {
+  const body =
+    typeof payload === "object" && payload !== null
+      ? (payload as { error?: { message?: unknown }; message?: unknown })
+      : undefined;
+
+  if (typeof body?.error?.message === "string") return body.error.message;
+  if (typeof body?.message === "string") return body.message;
+  return fallback;
+}
+
 export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise<T> {
   const headers = new Headers(init.headers);
   headers.set("Accept", "application/json");
@@ -32,10 +79,18 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     }
   }
 
-  const response = await fetch(
-    `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`,
-    { ...init, headers },
-  );
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`, {
+      ...init,
+      headers,
+    });
+  } catch (error) {
+    if (isConnectionError(error)) {
+      throw new ApiError(CONNECTION_ERROR_MESSAGE, 0, error);
+    }
+    throw error;
+  }
 
   if (response.status === 204) {
     return undefined as T;
@@ -47,17 +102,11 @@ export async function apiFetch<T>(path: string, init: RequestInit = {}): Promise
     : await response.text();
 
   if (!response.ok) {
-    const body =
-      typeof payload === "object" && payload !== null
-        ? (payload as { error?: { message?: unknown }; message?: unknown })
-        : undefined;
-    const message =
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : typeof body?.message === "string"
-          ? body.message
-          : `API request failed with status ${response.status}`;
-    throw new ApiError(message, response.status, payload);
+    throw new ApiError(
+      extractErrorMessage(payload, `API request failed with status ${response.status}`),
+      response.status,
+      payload,
+    );
   }
 
   return payload as T;
@@ -77,26 +126,28 @@ export async function apiDownload(
   const token = accessToken ?? window.localStorage.getItem(TOKEN_STORAGE_KEY);
   if (token) headers.set("Authorization", `Bearer ${token}`);
 
-  const response = await fetch(
-    `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`,
-    { headers },
-  );
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`, {
+      headers,
+    });
+  } catch (error) {
+    if (isConnectionError(error)) {
+      throw new ApiError(CONNECTION_ERROR_MESSAGE, 0, error);
+    }
+    throw error;
+  }
+
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";
     const payload: unknown = contentType.includes("application/json")
       ? await response.json()
       : await response.text();
-    const body =
-      typeof payload === "object" && payload !== null
-        ? (payload as { error?: { message?: unknown }; message?: unknown })
-        : undefined;
-    const message =
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : typeof body?.message === "string"
-          ? body.message
-          : `API request failed with status ${response.status}`;
-    throw new ApiError(message, response.status, payload);
+    throw new ApiError(
+      extractErrorMessage(payload, `API request failed with status ${response.status}`),
+      response.status,
+      payload,
+    );
   }
 
   const blob = await response.blob();
@@ -118,26 +169,29 @@ export async function apiFetchBlob(path: string, signal?: AbortSignal): Promise<
     if (token) headers.set("Authorization", `Bearer ${token}`);
   }
 
-  const response = await fetch(
-    `${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`,
-    { headers, signal },
-  );
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path.startsWith("/") ? path : `/${path}`}`, {
+      headers,
+      signal,
+    });
+  } catch (error) {
+    if (isConnectionError(error)) {
+      throw new ApiError(CONNECTION_ERROR_MESSAGE, 0, error);
+    }
+    throw error;
+  }
+
   if (!response.ok) {
     const contentType = response.headers.get("content-type") ?? "";
     const payload: unknown = contentType.includes("application/json")
       ? await response.json()
       : await response.text();
-    const body =
-      typeof payload === "object" && payload !== null
-        ? (payload as { error?: { message?: unknown }; message?: unknown })
-        : undefined;
-    const message =
-      typeof body?.error?.message === "string"
-        ? body.error.message
-        : typeof body?.message === "string"
-          ? body.message
-          : `API request failed with status ${response.status}`;
-    throw new ApiError(message, response.status, payload);
+    throw new ApiError(
+      extractErrorMessage(payload, `API request failed with status ${response.status}`),
+      response.status,
+      payload,
+    );
   }
 
   return response.blob();

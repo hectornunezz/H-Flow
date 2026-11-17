@@ -4,7 +4,10 @@ module.exports = {
   moduleNameMapper: { "^@/(.*)$": "<rootDir>/$1" },
   modulePathIgnorePatterns: ["<rootDir>/hflow-frontend/.next/"],
   testEnvironment: "node",
-  testMatch: ["<rootDir>/tests/**/*.test.ts"],
+  testMatch: [
+    "<rootDir>/tests/**/*.test.ts",
+    "<rootDir>/hflow-backend/src/tests/**/*.test.ts",
+  ],
   transform: {
     "^.+\\.tsx?$": [
       "ts-jest",

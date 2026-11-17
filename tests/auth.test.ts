@@ -13,7 +13,10 @@ const mockStripeService = {
   createCustomer: jest.fn(),
   deleteCustomer: jest.fn(),
 };
-const mockEmailService = { sendWelcomeEmail: jest.fn() };
+const mockEmailService = {
+  sendWelcomeEmail: jest.fn(),
+  sendVerificationCodeEmail: jest.fn(),
+};
 
 class MockPrismaClientKnownRequestError extends Error {
   code: string;
@@ -43,6 +46,7 @@ jest.doMock("../hflow-backend/src/utils/logger", () => ({
 const authRoutes = require("../hflow-backend/src/routes/auth.routes").default;
 const bcrypt = require("../hflow-backend/node_modules/bcrypt") as {
   hash(value: string, rounds: number): Promise<string>;
+  compare(value: string, hash: string): Promise<boolean>;
 };
 
 const app = express();
@@ -58,6 +62,9 @@ describe("POST /api/auth/login", () => {
     password: "",
     createdAt: new Date("2026-01-01T00:00:00.000Z"),
     isBetaTester: false,
+    emailVerifiedAt: new Date("2026-01-01T00:00:00.000Z"),
+    emailVerificationCodeHash: null as string | null,
+    emailVerificationExpiresAt: null as Date | null,
   };
 
   beforeAll(async () => {
@@ -70,6 +77,7 @@ describe("POST /api/auth/login", () => {
     Object.values(mockPrisma.trainer).forEach((mock) => mock.mockReset());
     Object.values(mockStripeService).forEach((mock) => mock.mockReset());
     mockEmailService.sendWelcomeEmail.mockReset();
+    mockEmailService.sendVerificationCodeEmail.mockReset();
     mockPrisma.trainer.findUnique.mockResolvedValue(trainer);
   });
 
@@ -96,6 +104,20 @@ describe("POST /api/auth/login", () => {
     });
   });
 
+  it("rejects login when the email is not verified", async () => {
+    mockPrisma.trainer.findUnique.mockResolvedValue({
+      ...trainer,
+      emailVerifiedAt: null,
+    });
+
+    const response = await request(app)
+      .post("/api/auth/login")
+      .send({ email: trainer.email, password });
+
+    expect(response.status).toBe(403);
+    expect(response.body.error.code).toBe("EMAIL_NOT_VERIFIED");
+  });
+
   it("uses the same unauthorized response for unknown accounts", async () => {
     mockPrisma.trainer.findUnique.mockResolvedValue(null);
 
@@ -120,13 +142,14 @@ describe("POST /api/auth/login", () => {
     expect(mockPrisma.trainer.findUnique).not.toHaveBeenCalled();
   });
 
-  it("registers a pending beta trainer without contacting Stripe by default", async () => {
+  it("registers a pending beta trainer and requires email verification", async () => {
     const createdTrainer = {
       id: "trainer-2",
       email: "coach@example.com",
       name: "New Coach",
       createdAt: new Date("2026-02-01T00:00:00.000Z"),
       isBetaTester: false,
+      emailVerifiedAt: null,
     };
     mockPrisma.trainer.create.mockImplementation(async ({ data }) => ({
       ...createdTrainer,
@@ -134,7 +157,8 @@ describe("POST /api/auth/login", () => {
       name: data.name,
       password: data.password,
     }));
-    mockEmailService.sendWelcomeEmail.mockResolvedValue(undefined);
+    mockPrisma.trainer.update.mockResolvedValue(createdTrainer);
+    mockEmailService.sendVerificationCodeEmail.mockResolvedValue(undefined);
 
     const response = await request(app)
       .post("/api/auth/register")
@@ -146,11 +170,12 @@ describe("POST /api/auth/login", () => {
 
     expect(response.status).toBe(201);
     expect(response.body.data).toMatchObject({
-      token: expect.any(String),
-      tokenType: "Bearer",
-      expiresIn: 3600,
+      requiresEmailVerification: true,
+      email: "coach@example.com",
+      emailed: true,
       trainer: { id: "trainer-2", email: "coach@example.com", name: "New Coach" },
     });
+    expect(response.body.data.token).toBeUndefined();
     const createCall = mockPrisma.trainer.create.mock.calls[0][0];
     expect(createCall.data.password).not.toBe("strong-password");
     await expect(
@@ -158,11 +183,12 @@ describe("POST /api/auth/login", () => {
     ).resolves.toBe(true);
     expect(response.body.data.trainer.is_beta_tester).toBe(false);
     expect(mockStripeService.createCustomer).not.toHaveBeenCalled();
-    expect(mockPrisma.trainer.update).not.toHaveBeenCalled();
-    expect(mockEmailService.sendWelcomeEmail).toHaveBeenCalledWith(
+    expect(mockEmailService.sendVerificationCodeEmail).toHaveBeenCalledWith(
       "coach@example.com",
       "New Coach",
+      expect.stringMatching(/^\d{6}$/),
     );
+    expect(mockEmailService.sendWelcomeEmail).not.toHaveBeenCalled();
   });
 
   it("rejects invalid registration data before hashing or creating an account", async () => {
@@ -202,6 +228,7 @@ describe("POST /api/auth/login", () => {
       password: "hashed-password",
       createdAt: new Date(),
       isBetaTester: false,
+      emailVerifiedAt: null,
     });
     mockStripeService.createCustomer.mockRejectedValue(new Error("Stripe unavailable"));
     mockPrisma.trainer.delete.mockResolvedValue({});
@@ -214,5 +241,31 @@ describe("POST /api/auth/login", () => {
     expect(mockPrisma.trainer.delete).toHaveBeenCalledWith({
       where: { id: "trainer-3" },
     });
+  });
+
+  it("verifies a pending trainer with a valid 6-digit code and returns a token", async () => {
+    const code = "123456";
+    const codeHash = await bcrypt.hash(code, 4);
+    mockPrisma.trainer.findUnique.mockResolvedValue({
+      ...trainer,
+      emailVerifiedAt: null,
+      emailVerificationCodeHash: codeHash,
+      emailVerificationExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+    });
+    mockPrisma.trainer.update.mockResolvedValue({
+      ...trainer,
+      emailVerifiedAt: new Date(),
+      emailVerificationCodeHash: null,
+      emailVerificationExpiresAt: null,
+    });
+    mockEmailService.sendWelcomeEmail.mockResolvedValue(undefined);
+
+    const response = await request(app)
+      .post("/api/auth/verify-email")
+      .send({ email: trainer.email, code });
+
+    expect(response.status).toBe(200);
+    expect(response.body.data.token).toEqual(expect.any(String));
+    expect(mockEmailService.sendWelcomeEmail).toHaveBeenCalledWith(trainer.email, trainer.name);
   });
 });
