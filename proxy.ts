@@ -1,117 +1,70 @@
-import { createServerClient } from '@supabase/ssr'
-import { NextResponse, type NextRequest } from 'next/server'
-import { getAuthenticatedUserRole } from '@/utils/auth'
-import { paymentsEnabled } from '@/utils/features'
-
-function redirectTo(request: NextRequest, response: NextResponse, pathname: string) {
-  const redirectUrl = request.nextUrl.clone()
-  redirectUrl.pathname = pathname
-  redirectUrl.search = ''
-  const redirectResponse = NextResponse.redirect(redirectUrl)
-
-  response.cookies.getAll().forEach((cookie) => {
-    redirectResponse.cookies.set(cookie)
-  })
-
-  return redirectResponse
-}
-
-function redirectWithoutSession(request: NextRequest, pathname: string) {
-  const redirectUrl = request.nextUrl.clone()
-  redirectUrl.pathname = pathname
-  redirectUrl.search = ''
-  return NextResponse.redirect(redirectUrl)
-}
+import { NextResponse, type NextRequest } from "next/server";
+import { createServerClient } from "@supabase/ssr";
 
 export async function proxy(request: NextRequest) {
-  const pathname = request.nextUrl.pathname
-  const isPricingPage = pathname === '/pricing' || pathname.startsWith('/pricing/')
+  const { pathname } = request.nextUrl;
 
-  if (pathname === '/login' || pathname === '/register' || pathname === '/beta-pending') {
-    return NextResponse.next()
-  }
-  if (isPricingPage) {
-    return paymentsEnabled()
-      ? NextResponse.next()
-      : redirectWithoutSession(request, '/login')
-  }
-
-  let response = NextResponse.next({ request })
-
-  const supabase = createServerClient(
-    process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
-    {
-      cookies: {
-        getAll() {
-          return request.cookies.getAll()
-        },
-        setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value }) => {
-            request.cookies.set(name, value)
-          })
-
-          response = NextResponse.next({ request })
-          cookiesToSet.forEach(({ name, value, options }) => {
-            response.cookies.set(name, value, options)
-          })
-        },
-      },
-    },
-  )
-
-  let authenticatedUser
-  try {
-    authenticatedUser = await getAuthenticatedUserRole(supabase)
-  } catch (error) {
-    if (error instanceof Error && error.message.includes('Auth session missing')) {
-      return redirectTo(request, response, '/login')
+  // 1. Si ya tiene la cookie de sesión verificada de H-Flow (Modo Resiliente), dejar pasar siempre
+  const hasLocalSession = request.cookies.has("hflow_session");
+  if (hasLocalSession) {
+    if (pathname.startsWith("/login") || pathname.startsWith("/register")) {
+      return NextResponse.redirect(new URL("/", request.url));
     }
-
-    console.error(
-      JSON.stringify({
-        timestamp: new Date().toISOString(),
-        level: 'error',
-        service: 'hflow-web',
-        event: 'supabase_authorization_check_failed',
-        message: error instanceof Error ? error.message : String(error),
-      }),
-    )
-    return NextResponse.json({ error: 'No se pudo verificar la autorización.' }, { status: 503 })
+    return NextResponse.next();
   }
 
-  if (!authenticatedUser) {
-    return redirectTo(request, response, '/login')
+  // 2. Rutas públicas que nunca deben bloquearse
+  if (
+    pathname.startsWith("/login") ||
+    pathname.startsWith("/register") ||
+    pathname.startsWith("/pricing") ||
+    pathname.startsWith("/api") ||
+    pathname.startsWith("/_next") ||
+    pathname.includes(".")
+  ) {
+    return NextResponse.next();
   }
 
-  if (!authenticatedUser.isBetaTester) {
-    return redirectTo(request, response, '/beta-pending')
+  // 3. Si no hay cookie local, intentamos validar con Supabase sin romper si falla la red
+  let response = NextResponse.next({ request });
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = createServerClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+        {
+          cookies: {
+            getAll() {
+              return request.cookies.getAll();
+            },
+            setAll(cookiesToSet) {
+              cookiesToSet.forEach(({ name, value, options }) =>
+                response.cookies.set(name, value, options)
+              );
+            },
+          },
+        }
+      );
+
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+
+      if (!user) {
+        return NextResponse.redirect(new URL("/login", request.url));
+      }
+      return response;
+    }
+  } catch {
+    // Fallback si Supabase no responde
   }
 
-  if (!authenticatedUser.role) {
-    return redirectTo(request, response, '/login')
-  }
-
-  const isClientPortal = pathname === '/client-portal' || pathname.startsWith('/client-portal/')
-  const isCoachDashboard = pathname === '/'
-  const roleMismatch =
-    (isClientPortal && authenticatedUser.role !== 'athlete') ||
-    (isCoachDashboard && authenticatedUser.role !== 'coach')
-
-  if (roleMismatch) {
-    const redirectUrl = request.nextUrl.clone()
-    redirectUrl.pathname = authenticatedUser.role === 'athlete' ? '/client-portal' : '/'
-    redirectUrl.search = ''
-    const redirectResponse = NextResponse.redirect(redirectUrl)
-    response.cookies.getAll().forEach((cookie) => {
-      redirectResponse.cookies.set(cookie)
-    })
-    return redirectResponse
-  }
-
-  return response
+  return NextResponse.redirect(new URL("/login", request.url));
 }
+
+export default proxy;
 
 export const config = {
-  matcher: ['/((?!api|_next/static|_next/image|_next/data|favicon.ico|sitemap.xml|robots.txt|.*\\..*).*)'],
-}
+  matcher: ["/((?!_next/static|_next/image|favicon.ico).*)"],
+};

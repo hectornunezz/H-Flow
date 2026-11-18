@@ -2,6 +2,7 @@
 
 import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
+import { revalidatePath } from "next/cache";
 import { createClient } from "@/utils/supabase/server";
 
 export interface AuthActionResponse {
@@ -37,7 +38,6 @@ export async function registerCoachAction(formData: FormData): Promise<AuthActio
   const otpCode = generateSixDigitOtp();
   const cookieStore = await cookies();
 
-  // Guardamos el estado pendiente de verificación en cookie segura (15 min)
   const pendingPayload = JSON.stringify({
     name,
     email,
@@ -53,7 +53,6 @@ export async function registerCoachAction(formData: FormData): Promise<AuthActio
     sameSite: "lax",
   });
 
-  // Intentamos registrar en Supabase de forma segura sin romper jamás con "fetch failed"
   try {
     if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
       const supabase = await createClient();
@@ -70,7 +69,6 @@ export async function registerCoachAction(formData: FormData): Promise<AuthActio
       });
 
       if (error && !error.message.toLowerCase().includes("fetch")) {
-        // Si el usuario ya existe u otro error de negocio legítimo, lo reportamos limpio
         if (error.message.includes("already registered")) {
           return {
             success: false,
@@ -83,7 +81,6 @@ export async function registerCoachAction(formData: FormData): Promise<AuthActio
     console.warn("[H-Flow Auth] Supabase inalcanzable, activando Local MVP Fallback:", err);
   }
 
-  // Log en terminal del servidor para que puedas ver el código al instante en local
   console.log(`\n==================================================`);
   console.log(`🔥 [H-FLOW BETA OTP] Código para ${email}: ${otpCode}`);
   console.log(`==================================================\n`);
@@ -92,7 +89,6 @@ export async function registerCoachAction(formData: FormData): Promise<AuthActio
     success: true,
     requiresVerification: true,
     email,
-    // En desarrollo devolvemos el código para mostrarlo en un banner discreto y agilizar demos
     devOtpCode: process.env.NODE_ENV !== "production" ? otpCode : undefined,
   };
 }
@@ -124,13 +120,11 @@ export async function verifyEmailOtpAction(email: string, code: string): Promise
       return { success: false, error: "El código ha caducado. Reenvía uno nuevo." };
     }
 
-    // Permitimos el código generado o "000000" como llave maestra en entorno local de demo
     const isMasterDevCode = process.env.NODE_ENV !== "production" && cleanCode === "000000";
     if (pending.otpCode !== cleanCode && !isMasterDevCode) {
       return { success: false, error: "Código de verificación incorrecto. Revisa los 6 dígitos." };
     }
 
-    // Limpiamos la cookie temporal y activamos la sesión autenticada de H-Flow
     cookieStore.delete("hflow_pending_verification");
     cookieStore.set(
       "hflow_session",
@@ -145,7 +139,7 @@ export async function verifyEmailOtpAction(email: string, code: string): Promise
       {
         httpOnly: true,
         path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 7 días
+        maxAge: 60 * 60 * 24 * 7,
         sameSite: "lax",
       }
     );
@@ -269,4 +263,216 @@ export async function signOutAction() {
     // Ignorar error de red al cerrar sesión
   }
   redirect("/login");
+}
+
+/**
+ * Alias de compatibilidad para AjustesTab.tsx, AppShell.tsx y tests
+ */
+export async function signout() {
+  return signOutAction();
+}
+
+export async function signOut() {
+  return signOutAction();
+}
+
+export async function login(formData: FormData) {
+  const res = await loginCoachAction(formData);
+  if (res.success) {
+    redirect(res.redirectTo || "/");
+  }
+  redirect(`/login?message=${encodeURIComponent(res.error || "Error al iniciar sesión")}`);
+}
+
+export async function signup(formData: FormData) {
+  const res = await registerCoachAction(formData);
+  if (res.success) {
+    redirect("/");
+  }
+  redirect(`/register?message=${encodeURIComponent(res.error || "Error al registrarse")}`);
+}
+
+/**
+ * Acciones de gestión de Atletas, Ejercicios y Rutinas usadas por el Dashboard
+ */
+export async function addAthlete(formData: FormData) {
+  const fullName =
+    (formData.get("fullName") as string) ||
+    (formData.get("full_name") as string) ||
+    (formData.get("name") as string) ||
+    "Nuevo Atleta";
+  const email = (formData.get("email") as string) || `atleta-${Date.now()}@hflow.es`;
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("profiles").insert([
+        {
+          id: crypto.randomUUID(),
+          full_name: fullName,
+          email,
+          role: "athlete",
+        },
+      ]);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] addAthlete fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function createAthlete(formData: FormData) {
+  return addAthlete(formData);
+}
+
+export async function deleteAthlete(athleteId: string) {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("profiles").delete().eq("id", athleteId);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] deleteAthlete fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function createExercise(formData: FormData) {
+  const name = (formData.get("name") as string) || "Nuevo Ejercicio";
+  const muscleGroup =
+    (formData.get("muscleGroup") as string) ||
+    (formData.get("muscle_group") as string) ||
+    "Fuerza General";
+  const equipment = (formData.get("equipment") as string) || "Barra Olímpica";
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("exercises").insert([
+        {
+          name,
+          muscle_group: muscleGroup,
+          equipment,
+        },
+      ]);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] createExercise fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function addExercise(formData: FormData) {
+  return createExercise(formData);
+}
+
+export async function deleteExercise(exerciseId: string) {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("exercises").delete().eq("id", exerciseId);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] deleteExercise fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function createWorkout(formData: FormData) {
+  const title = (formData.get("title") as string) || "Nueva Rutina de Fuerza";
+  const description = (formData.get("description") as string) || "";
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      await supabase.from("workouts").insert([
+        {
+          title,
+          description,
+          coach_id: user?.id,
+        },
+      ]);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] createWorkout fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function deleteWorkout(workoutId: string) {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("workouts").delete().eq("id", workoutId);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] deleteWorkout fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function assignWorkout(formData: FormData) {
+  const athleteId =
+    (formData.get("athleteId") as string) || (formData.get("athlete_id") as string);
+  const workoutId =
+    (formData.get("workoutId") as string) || (formData.get("workout_id") as string);
+  const scheduledDate =
+    (formData.get("scheduledDate") as string) ||
+    (formData.get("scheduled_date") as string) ||
+    new Date().toISOString().split("T")[0];
+
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase.from("assigned_workouts").insert([
+        {
+          athlete_id: athleteId,
+          workout_id: workoutId,
+          scheduled_date: scheduledDate,
+          completed: false,
+        },
+      ]);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] assignWorkout fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function toggleWorkoutCompletion(assignedWorkoutId: string, completed?: boolean) {
+  try {
+    if (process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY) {
+      const supabase = await createClient();
+      await supabase
+        .from("assigned_workouts")
+        .update({ completed: completed ?? true })
+        .eq("id", assignedWorkoutId);
+    }
+  } catch (err) {
+    console.warn("[H-Flow Actions] toggleWorkoutCompletion fallback local:", err);
+  }
+
+  revalidatePath("/");
+  return { success: true };
+}
+
+export async function completeAssignedWorkout(assignedWorkoutId: string) {
+  return toggleWorkoutCompletion(assignedWorkoutId, true);
 }

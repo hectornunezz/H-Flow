@@ -1,24 +1,19 @@
 import type { NextConfig } from 'next'
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-if (!supabaseUrl) {
-  throw new Error('Falta configurar NEXT_PUBLIC_SUPABASE_URL para las imágenes remotas.')
-}
+let supabaseHostname = 'localhost'
 
-let supabaseHostname: string
-try {
-  const parsedSupabaseUrl = new URL(supabaseUrl)
-  if (parsedSupabaseUrl.protocol !== 'https:') {
-    throw new Error('NEXT_PUBLIC_SUPABASE_URL debe usar HTTPS.')
+if (supabaseUrl) {
+  try {
+    const parsedSupabaseUrl = new URL(supabaseUrl)
+    supabaseHostname = parsedSupabaseUrl.hostname
+  } catch {
+    supabaseHostname = 'localhost'
   }
-  supabaseHostname = parsedSupabaseUrl.hostname
-} catch (error) {
-  throw new Error(
-    `NEXT_PUBLIC_SUPABASE_URL no es una URL válida: ${error instanceof Error ? error.message : 'valor no válido.'}`,
-  )
 }
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['10.100.2.156', 'localhost'],
   distDir: process.env.NEXT_BUILD_DIR || '.next',
   compress: true,
   turbopack: {
