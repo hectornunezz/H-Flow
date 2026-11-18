@@ -1,4 +1,4 @@
-import { AuthForm } from '@/components/AuthForm'
+import AuthForm  from '@/components/AuthForm'
 
 export default async function RegisterPage({
   searchParams,
@@ -7,5 +7,5 @@ export default async function RegisterPage({
 }) {
   const params = await searchParams
 
-  return <AuthForm mode="register" message={params?.message} />
+  return <AuthForm mode="register" />
 }
