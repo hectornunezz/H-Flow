@@ -121,7 +121,7 @@ export default function AthletesManager() {
   }
 
   return (
-    <main className="min-h-screen bg-slate-950 px-4 py-8 text-white sm:px-6 lg:px-10">
+    <main className="min-h-screen bg-[#0A0A0A] px-4 py-8 text-white sm:px-6 lg:px-10">
       <div className="mx-auto max-w-7xl space-y-8">
         <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
           <div>
@@ -148,7 +148,7 @@ export default function AthletesManager() {
                 onChange={(event) => setSearch(event.target.value)}
                 placeholder="Buscar atletas..."
                 aria-label="Buscar atletas"
-                className="h-11 w-full rounded-xl border border-slate-700/70 bg-slate-900/80 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20"
+                className="h-11 w-full rounded-xl border border-neutral-800/70 bg-[#111111]/80 pl-10 pr-4 text-sm text-white outline-none transition placeholder:text-slate-500 focus:border-[#FF5A00] focus:ring-2 focus:ring-[#FF5A00]/20"
               />
             </label>
             <button
@@ -185,7 +185,7 @@ export default function AthletesManager() {
               {Array.from({ length: 3 }, (_, index) => (
                 <div
                   key={index}
-                  className="animate-pulse rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5"
+                  className="animate-pulse rounded-2xl border border-neutral-800/50 bg-slate-800/40 p-5"
                 >
                   <div className="flex items-start justify-between">
                     <div className="h-14 w-14 rounded-2xl bg-slate-700/70" />
@@ -211,7 +211,7 @@ export default function AthletesManager() {
                 return (
                   <article
                     key={athlete.id}
-                    className="rounded-2xl border border-slate-700/50 bg-slate-800/40 p-5 shadow-xl shadow-black/10 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-slate-600/70"
+                    className="rounded-2xl border border-neutral-800/50 bg-slate-800/40 p-5 shadow-xl shadow-black/10 backdrop-blur-md transition hover:-translate-y-0.5 hover:border-slate-600/70"
                   >
                     <div className="flex items-start justify-between">
                       <div
@@ -266,7 +266,7 @@ export default function AthletesManager() {
               })}
             </div>
           ) : athletes.length === 0 ? (
-            <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-slate-700/50 bg-slate-800/40 px-6 py-12 text-center backdrop-blur-md">
+            <div className="flex min-h-64 flex-col items-center justify-center rounded-2xl border border-neutral-800/50 bg-slate-800/40 px-6 py-12 text-center backdrop-blur-md">
               <div className="flex h-14 w-14 items-center justify-center rounded-2xl border border-[#FF5A00]/20 bg-[#FF5A00]/10">
                 <UserRound
                   aria-hidden="true"
@@ -289,7 +289,7 @@ export default function AthletesManager() {
               </button>
             </div>
           ) : (
-            <div className="rounded-2xl border border-slate-700/50 bg-slate-800/40 px-6 py-14 text-center backdrop-blur-md">
+            <div className="rounded-2xl border border-neutral-800/50 bg-slate-800/40 px-6 py-14 text-center backdrop-blur-md">
               <UserRound
                 aria-hidden="true"
                 className="mx-auto h-8 w-8 text-slate-600"
@@ -318,7 +318,7 @@ export default function AthletesManager() {
             role="dialog"
             aria-modal="true"
             aria-labelledby="new-athlete-title"
-            className="w-full max-w-md rounded-2xl border border-slate-700 bg-slate-900 p-6 shadow-2xl"
+            className="w-full max-w-md rounded-2xl border border-neutral-800 bg-[#111111] p-6 shadow-2xl"
           >
             <div className="flex items-center justify-between">
               <h2 id="new-athlete-title" className="text-lg font-bold">
@@ -341,7 +341,7 @@ export default function AthletesManager() {
                 value={newName}
                 onChange={(event) => setNewName(event.target.value)}
                 placeholder="Nombre del atleta"
-                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#FF5A00]"
+                className="mt-2 h-11 w-full rounded-xl border border-neutral-800 bg-[#0A0A0A] px-3 text-sm text-white outline-none placeholder:text-slate-600 focus:border-[#FF5A00]"
               />
             </label>
             <label className="mt-4 block text-xs font-semibold text-slate-300">
@@ -349,7 +349,7 @@ export default function AthletesManager() {
               <select
                 value={newExperience}
                 onChange={(event) => setNewExperience(event.target.value)}
-                className="mt-2 h-11 w-full rounded-xl border border-slate-700 bg-slate-950 px-3 text-sm text-white outline-none focus:border-[#FF5A00]"
+                className="mt-2 h-11 w-full rounded-xl border border-neutral-800 bg-[#0A0A0A] px-3 text-sm text-white outline-none focus:border-[#FF5A00]"
               >
                 <option>Principiante</option>
                 <option>Intermedio</option>

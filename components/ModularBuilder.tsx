@@ -9,7 +9,7 @@ import {
 import { toast } from 'sonner'
 import type { ExerciseBank, IntensityTechnique } from '@/types/workout'
 import { saveCompleteRoutine } from '@/app/actions/workouts'
-import AIAssistantModal, { type AIAssistantData } from './AIAssistantModal'
+import // // AIAssistantModal, { type AIAssistantData } from './// // AIAssistantModal'
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ExerciseEntry {
@@ -113,7 +113,7 @@ function ExerciseCard({
     onChange({ ...entry, [k]: v })
 
   return (
-    <div className="bg-slate-900/70 border border-slate-700/50 rounded-xl overflow-hidden">
+    <div className="bg-[#111111]/70 border border-neutral-800/50 rounded-xl overflow-hidden">
       <div
         className="flex items-center gap-3 px-3.5 py-3 cursor-pointer select-none"
         onClick={() => setOpen(v => !v)}
@@ -154,7 +154,7 @@ function ExerciseCard({
                 type="number" min={1} max={20}
                 value={entry.sets}
                 onChange={e => set('sets', parseInt(e.target.value) || 1)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
+                className="w-full bg-[#0A0A0A] border border-neutral-800/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
               />
             </div>
             {/* Reps */}
@@ -165,7 +165,7 @@ function ExerciseCard({
                 value={entry.reps_target}
                 placeholder="8-12"
                 onChange={e => set('reps_target', e.target.value)}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
+                className="w-full bg-[#0A0A0A] border border-neutral-800/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
               />
             </div>
             {/* RIR */}
@@ -176,7 +176,7 @@ function ExerciseCard({
                 value={entry.rir_target ?? ''}
                 placeholder="—"
                 onChange={e => set('rir_target', e.target.value === '' ? null : parseInt(e.target.value))}
-                className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
+                className="w-full bg-[#0A0A0A] border border-neutral-800/80 rounded-lg px-2 py-2 text-sm text-white text-center font-mono focus:outline-none focus:border-[#FF5A00] transition-colors"
               />
             </div>
           </div>
@@ -186,7 +186,7 @@ function ExerciseCard({
             <select
               value={entry.intensity_technique ?? ''}
               onChange={e => set('intensity_technique', (e.target.value as IntensityTechnique) || null)}
-              className="w-full bg-slate-950 border border-slate-700/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors"
+              className="w-full bg-[#0A0A0A] border border-neutral-800/80 rounded-lg px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] transition-colors"
             >
               <option value="">Sin técnica especial</option>
               {TECHNIQUES.map(t => <option key={t} value={t}>{t}</option>)}
@@ -260,7 +260,7 @@ function DayBlockCard({
   }
 
   return (
-    <div className="bg-slate-800/40 backdrop-blur-md border border-slate-700/50 rounded-2xl overflow-hidden">
+    <div className="bg-slate-800/40 backdrop-blur-md border border-neutral-800/50 rounded-2xl overflow-hidden">
       {/* Header */}
       <div className="flex items-center gap-3 px-4 py-3.5">
         <button type="button" onClick={onToggle} className="flex-1 flex items-center gap-3 min-w-0 text-left">
@@ -276,7 +276,7 @@ function DayBlockCard({
               onBlur={commitName}
               onKeyDown={e => { if (e.key === 'Enter') commitName(); if (e.key === 'Escape') setEditingName(false) }}
               onClick={e => e.stopPropagation()}
-              className="flex-1 bg-slate-950 border border-[#FF5A00]/50 rounded-lg px-2 py-1 text-sm font-bold text-white focus:outline-none"
+              className="flex-1 bg-[#0A0A0A] border border-[#FF5A00]/50 rounded-lg px-2 py-1 text-sm font-bold text-white focus:outline-none"
             />
           ) : (
             <div className="flex-1 min-w-0">
@@ -295,7 +295,7 @@ function DayBlockCard({
         </button>
 
         <div className="flex items-center gap-1.5 shrink-0">
-          <span className="text-[10px] font-black bg-slate-900 border border-slate-700/60 text-slate-400 px-2 py-0.5 rounded-lg min-w-[24px] text-center">
+          <span className="text-[10px] font-black bg-[#111111] border border-neutral-800/60 text-slate-400 px-2 py-0.5 rounded-lg min-w-[24px] text-center">
             {day.exercises.length}
           </span>
           <button
@@ -343,7 +343,7 @@ function DayBlockCard({
                     key={ex.id}
                     type="button"
                     onClick={() => addExercise(ex)}
-                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-slate-900/50 hover:bg-slate-900 border border-slate-700/40 hover:border-[#FF5A00]/30 text-left transition-all group"
+                    className="w-full flex items-center gap-2.5 px-3 py-2.5 rounded-xl bg-[#111111]/50 hover:bg-[#111111] border border-neutral-800/40 hover:border-[#FF5A00]/30 text-left transition-all group"
                   >
                     <Plus className="w-3.5 h-3.5 text-slate-600 group-hover:text-[#FF5A00] shrink-0 transition-colors" />
                     <div className="min-w-0 flex-1">
@@ -555,7 +555,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
 
   return (
     <div className={isFullscreen
-      ? 'fixed inset-0 z-50 overflow-y-auto bg-slate-950 p-6'
+      ? 'fixed inset-0 z-50 overflow-y-auto bg-[#0A0A0A] p-6'
       : 'flex flex-col gap-4'
     }>
       <section className="routine-printable hidden" aria-label="Rutina para imprimir">
@@ -596,7 +596,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
       </section>
 
       {/* ── Sticky top bar ── */}
-      <div className="sticky top-0 z-10 bg-slate-950/95 backdrop-blur-md space-y-3 pb-1">
+      <div className="sticky top-0 z-10 bg-[#0A0A0A]/95 backdrop-blur-md space-y-3 pb-1">
         <div className="relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-500 pointer-events-none" />
           <input
@@ -605,7 +605,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
             value={search}
             onChange={e => setSearch(e.target.value)}
             placeholder="Buscar en el banco de ejercicios..."
-            className="w-full bg-slate-800/60 border border-slate-700/60 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors"
+            className="w-full bg-slate-800/60 border border-neutral-800/60 rounded-xl pl-9 pr-9 py-2.5 text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:border-[#FF5A00] transition-colors"
           />
           {search && (
             <button
@@ -631,7 +631,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition-colors ${
                     selected
                       ? 'border-[#FF5A00]/50 bg-[#FF5A00]/10 text-[#FF5A00]'
-                      : 'border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      : 'border-slate-700 bg-[#111111]/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
                   }`}
                 >
                   {filter.label}
@@ -651,7 +651,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
                   className={`shrink-0 rounded-full border px-3 py-1.5 text-[10px] font-semibold transition-colors ${
                     selected
                       ? 'border-[#FF5A00]/50 bg-[#FF5A00]/10 text-[#FF5A00]'
-                      : 'border-slate-700 bg-slate-900/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
+                      : 'border-slate-700 bg-[#111111]/70 text-slate-400 hover:border-slate-500 hover:text-slate-200'
                   }`}
                 >
                   {filter.label}
@@ -671,7 +671,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
               type="button"
               onClick={() => setIsFullscreen(true)}
               aria-label="Expandir a pantalla completa"
-              className="flex items-center gap-1.5 rounded-xl border border-slate-700 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
+              className="flex items-center gap-1.5 rounded-xl border border-neutral-800 bg-slate-800/60 px-3 py-2 text-xs font-semibold text-slate-300 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
             >
               <Maximize2 className="h-4 w-4" aria-hidden />
               <span className="hidden sm:inline">Pantalla Completa</span>
@@ -691,7 +691,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
                 <select
                   value={newDayName}
                   onChange={e => setNewDayName(e.target.value)}
-                  className="bg-slate-900 border border-slate-700 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00]"
+                  className="bg-[#111111] border border-neutral-800 rounded-xl px-2 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00]"
                 >
                   <option value="">Plantilla...</option>
                   {DAY_SUGGESTIONS.map(s => <option key={s} value={s}>{s}</option>)}
@@ -703,7 +703,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
                   onChange={e => setNewDayName(e.target.value)}
                   onKeyDown={e => { if (e.key === 'Enter') addDay(); if (e.key === 'Escape') setAddingDay(false) }}
                   placeholder="o nombre libre..."
-                  className="bg-slate-900 border border-slate-700 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] w-28 shrink-0"
+                  className="bg-[#111111] border border-neutral-800 rounded-xl px-3 py-2 text-xs text-slate-200 focus:outline-none focus:border-[#FF5A00] w-28 shrink-0"
                 />
                 <button type="button" onClick={addDay}
                   className="bg-[#FF5A00] text-white text-xs font-bold px-3 py-2 rounded-xl active:scale-95 shrink-0">
@@ -722,7 +722,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
       {/* ── Days list ── */}
       {days.length === 0 ? (
         <div className="flex flex-col items-center justify-center gap-4 py-20 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-slate-700/50 flex items-center justify-center">
+          <div className="w-14 h-14 rounded-2xl bg-slate-800/60 border border-neutral-800/50 flex items-center justify-center">
             <SlidersHorizontal className="w-7 h-7 text-slate-600" />
           </div>
           <div>
@@ -758,7 +758,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           <button
             type="button"
             onClick={() => window.print()}
-            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-slate-700 bg-slate-800/60 py-3 text-sm font-bold text-slate-200 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
+            className="mb-3 flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-800 bg-slate-800/60 py-3 text-sm font-bold text-slate-200 transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
           >
             <Printer className="h-4 w-4" aria-hidden />
             Exportar a PDF
@@ -780,7 +780,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           type="button"
           onClick={() => setIsFullscreen(false)}
           aria-label="Salir de pantalla completa"
-          className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-full border border-slate-700 bg-slate-900 px-4 py-3 text-sm font-bold text-white shadow-xl transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
+          className="fixed bottom-6 right-6 z-[60] flex items-center gap-2 rounded-full border border-neutral-800 bg-[#111111] px-4 py-3 text-sm font-bold text-white shadow-xl transition-colors hover:border-[#FF5A00]/50 hover:text-[#FF5A00]"
         >
           <Minimize2 className="h-4 w-4" aria-hidden />
           Salir de pantalla completa
@@ -796,7 +796,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
         Asistente IA
       </button>
       {/* ── AI Assistant Modal ── */}
-      <AIAssistantModal
+      <// // AIAssistantModal
         isOpen={isAIModalOpen}
         onClose={() => setIsAIModalOpen(false)}
         exerciseOptions={exerciseOptions}
