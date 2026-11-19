@@ -20,10 +20,10 @@ export async function registerAthleteCheckIn(input: AthleteCheckIn): Promise<voi
     input.sleepHours > 24 ||
     !Number.isInteger(input.stressLevel) ||
     input.stressLevel < 1 ||
-    input.stressLevel > 5 ||
+    input.stressLevel > 10 ||
     !Number.isInteger(input.fatigueLevel) ||
     input.fatigueLevel < 1 ||
-    input.fatigueLevel > 5
+    input.fatigueLevel > 10
   ) {
     throw new Error('Los datos del check-in no son válidos.')
   }
