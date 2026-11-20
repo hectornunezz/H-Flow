@@ -26,7 +26,6 @@ import {
 
 // Componentes y vistas principales de H-Flow
 import AthletesManager from '@/components/AthletesManager'
-import VoiceSimulatorWidget from '@/components/VoiceSimulatorWidget'
 import OverviewTab   from '@/components/tabs/OverviewTab'
 import RutinasTab    from '@/components/tabs/RutinasTab'
 import CalendarioTab from '@/components/tabs/CalendarioTab'
@@ -217,7 +216,6 @@ export default function DashboardTabs({
         {activeTab === 'ia-mensajes' && (
           <div className="space-y-6">
             <h2 className="text-xl font-bold text-white">Centro de Inteligencia de Audio</h2>
-            <VoiceSimulatorWidget />
           </div>
         )}
 
