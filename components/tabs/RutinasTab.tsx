@@ -1,10 +1,10 @@
 /**
  * components/tabs/RutinasTab.tsx
  *
- * Arquitectura de rutinas — creación de plantillas y asignación de ejercicios.
+ * Arquitectura de rutinas — gestión de plantillas activas.
  */
 
-import { addWorkout, addExerciseToWorkout } from '@/app/actions'
+import { createWorkout, deleteWorkout } from '@/app/actions'
 import type { ExerciseRecord, WorkoutRecord } from '@/types'
 
 interface Props {
@@ -12,7 +12,7 @@ interface Props {
   exercises: ExerciseRecord[]
 }
 
-export default function RutinasTab({ workouts, exercises }: Props) {
+export default function RutinasTab({ workouts }: Props) {
   return (
     <div className="space-y-6 sm:space-y-8 max-w-3xl">
 
@@ -25,7 +25,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
           Diseño de Rutinas
         </p>
         <p className="text-xs text-slate-400 mt-1">
-          Crea plantillas de entrenamiento y estructura sus bloques de ejercicios.
+          Crea plantillas de entrenamiento y gestiona tus bloques activos.
         </p>
       </div>
 
@@ -37,7 +37,13 @@ export default function RutinasTab({ workouts, exercises }: Props) {
           </p>
         </div>
         <div className="p-5">
-          <form action={addWorkout} className="flex flex-col gap-3">
+          <form
+            action={async (formData) => {
+              'use server'
+              await createWorkout(formData)
+            }}
+            className="flex flex-col gap-3"
+          >
             <input
               type="text"
               name="title"
@@ -54,7 +60,7 @@ export default function RutinasTab({ workouts, exercises }: Props) {
               />
               <button
                 type="submit"
-                className="bg-purple-600 hover:bg-purple-500 text-white text-sm font-semibold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-purple-600/20 active:scale-95 shrink-0"
+                className="bg-[#f97316] hover:bg-[#ea580c] text-[#030712] text-sm font-bold px-6 py-2.5 rounded-xl transition-all shadow-lg shadow-orange-950/30 active:scale-95 shrink-0"
               >
                 Crear Rutina
               </button>
@@ -93,13 +99,28 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                         <p className="text-xs text-slate-400 mt-0.5">{w.description}</p>
                       )}
                     </div>
-                    <span className="shrink-0 text-[10px] font-bold bg-purple-500/10 text-purple-400 border border-purple-500/20 px-2 py-0.5 rounded-lg">
-                      {w.workout_exercises?.length || 0} ejerc.
-                    </span>
+                    <div className="flex items-center gap-2 shrink-0">
+                      <span className="text-[10px] font-bold bg-[#f97316]/10 text-[#f97316] border border-[#f97316]/20 px-2 py-0.5 rounded-lg">
+                        {w.workout_exercises?.length || 0} ejerc.
+                      </span>
+                      <form
+                        action={async () => {
+                          'use server'
+                          await deleteWorkout(w.id)
+                        }}
+                      >
+                        <button
+                          type="submit"
+                          className="text-rose-400 hover:text-rose-300 text-[10px] font-bold px-2.5 py-1 rounded-lg border border-rose-500/20 bg-rose-500/10 transition-colors"
+                        >
+                          Eliminar
+                        </button>
+                      </form>
+                    </div>
                   </div>
                 </div>
 
-                <div className="p-5 space-y-4">
+                <div className="p-5">
                   {/* Ejercicios estructurados */}
                   <div className="bg-slate-950/60 rounded-xl border border-slate-800/80 overflow-hidden">
                     <div className="px-4 py-2.5 border-b border-slate-800/60">
@@ -141,69 +162,6 @@ export default function RutinasTab({ workouts, exercises }: Props) {
                       </p>
                     )}
                   </div>
-
-                  {/* Formulario añadir ejercicio */}
-                  {exercises.length > 0 && (
-                    <form
-                      action={addExerciseToWorkout}
-                      className="space-y-2.5 pt-1 border-t border-slate-800/60"
-                    >
-                      <input type="hidden" name="workout_id" value={w.id} />
-                      <select
-                        name="exercise_id"
-                        required
-                        className="bg-slate-900 border border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs text-slate-200 focus:outline-none focus:border-[#f97316] transition-colors w-full min-h-9 shadow-inner"
-                      >
-                        <option value="">Selecciona ejercicio de la biblioteca...</option>
-                        {exercises.map((ex) => (
-                          <option key={ex.id} value={ex.id}>
-                            {ex.name} — [{ex.equipment || 'General'}] ({ex.difficulty || 'Intermedio'})
-                          </option>
-                        ))}
-                      </select>
-                      <div className="grid grid-cols-[1fr_1fr_1fr_auto] gap-2">
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">Series</label>
-                          <input
-                            type="number"
-                            name="sets"
-                            defaultValue="3"
-                            min="1"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">Reps</label>
-                          <input
-                            type="text"
-                            name="reps"
-                            defaultValue="10"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">RIR</label>
-                          <input
-                            type="number"
-                            name="rir"
-                            defaultValue="2"
-                            min="0"
-                            max="5"
-                            className="bg-slate-900 border border-slate-700/80 rounded-xl px-2 py-2 text-xs text-slate-200 w-full text-center font-mono min-h-9 shadow-inner focus:outline-none focus:border-[#f97316]"
-                          />
-                        </div>
-                        <div className="space-y-1">
-                          <label className="text-[9px] text-slate-500 font-bold uppercase tracking-wider px-1">&nbsp;</label>
-                          <button
-                            type="submit"
-                            className="bg-slate-800 hover:bg-slate-700 text-white text-xs font-semibold px-4 py-2 rounded-xl transition-colors border border-slate-700 hover:border-slate-600 active:scale-95 min-h-9 w-full"
-                          >
-                            Añadir
-                          </button>
-                        </div>
-                      </div>
-                    </form>
-                  )}
                 </div>
               </div>
             ))}

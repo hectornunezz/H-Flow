@@ -60,7 +60,13 @@ export default function BibliotecaTab({ exercises }: Props) {
           </p>
         </div>
         <div className="p-5">
-          <form action={addExercise} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <form
+            action={async (formData) => {
+              'use server'
+              await addExercise(formData)
+            }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+          >
             <input
               type="text"
               name="name"

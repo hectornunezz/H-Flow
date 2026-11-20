@@ -61,7 +61,13 @@ export default function CalendarioTab({ workouts, profiles, assignedWorkouts }: 
         </div>
         <div className="p-5">
           {canAssign ? (
-            <form action={assignWorkout} className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <form
+              action={async (formData) => {
+                'use server'
+                await assignWorkout(formData)
+              }}
+              className="grid grid-cols-1 sm:grid-cols-2 gap-3"
+            >
               <select
                 name="workout_id"
                 required

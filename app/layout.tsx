@@ -1,32 +1,33 @@
 import type { Metadata } from "next";
-import localFont from "next/font/local";
+import { Inter, JetBrains_Mono } from "next/font/google";
 import "./globals.css";
-import { HFlowToaster } from "@/components/Toast";
 
-const geistSans = localFont({
-  src: [{ path: "../hflow-frontend/src/app/fonts/GeistVF.woff", weight: "100 900", style: "normal" }],
+const inter = Inter({
+  subsets: ["latin"],
   variable: "--font-geist-sans",
 });
 
-const geistMono = localFont({
-  src: [{ path: "../hflow-frontend/src/app/fonts/GeistMonoVF.woff", weight: "100 900", style: "normal" }],
+const jetbrainsMono = JetBrains_Mono({
+  subsets: ["latin"],
   variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
-  title: "H-Flow | Rendimiento en movimiento",
-  description: "Plataforma de gestión y rendimiento deportivo H-Flow.",
+  title: "H-Flow | Terminal de Alto Rendimiento",
+  description: "Plataforma operativa para preparadores de fuerza e hipertrofia",
 };
 
-export default function RootLayout({ children }: LayoutProps<"/">) {
+export default function RootLayout({
+  children,
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html
-      lang="es"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-      suppressHydrationWarning>
-      <body className="min-h-full flex flex-col">
+    <html lang="es" className="dark">
+      <body
+        className={`${inter.variable} ${jetbrainsMono.variable} bg-[#0A0A0A] text-white antialiased`}
+      >
         {children}
-        <HFlowToaster />
       </body>
     </html>
   );

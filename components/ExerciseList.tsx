@@ -58,8 +58,12 @@ export default function ExerciseList({ exercises }: { exercises: ExerciseRecord[
                   )}
                 </div>
 
-                <form action={deleteExercise} className="self-stretch sm:self-end">
-                  <input type="hidden" name="id" value={ex.id} />
+                <form
+                  action={async () => {
+                    await deleteExercise(ex.id)
+                  }}
+                  className="self-stretch sm:self-end"
+                >
                   <button
                     type="submit"
                     className="w-full sm:w-auto text-rose-400 hover:text-rose-300 text-xs px-3 py-2.5 rounded-xl border border-rose-500/20 bg-rose-500/10 transition-colors min-h-10"

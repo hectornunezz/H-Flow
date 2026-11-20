@@ -12,7 +12,6 @@ import {
 } from 'lucide-react'
 import DashboardTab   from '@/components/tabs/DashboardTab'
 import AtletasTab     from '@/components/tabs/AtletasTab'
-import IAMensajesTab  from '@/components/tabs/IAMensajesTab'
 import AjustesTab     from '@/components/tabs/AjustesTab'
 import type {
   AssignedWorkoutRecord,
@@ -58,7 +57,6 @@ export default function AppShell({
   const NAV: NavItem[] = [
     { id: 'dashboard', label: 'Dashboard',     Icon: LayoutDashboard },
     { id: 'atletas',   label: 'Atletas',       Icon: Users,         badge: athleteCount || undefined },
-    { id: 'ia',        label: 'IA & Mensajes', Icon: MessageSquare },
     { id: 'ajustes',   label: 'Ajustes',       Icon: Settings },
   ]
 
@@ -76,8 +74,6 @@ export default function AppShell({
         )
       case 'atletas':
         return <AtletasTab profiles={profiles} />
-      case 'ia':
-        return <IAMensajesTab />
       case 'ajustes':
         return <AjustesTab user={user} />
     }

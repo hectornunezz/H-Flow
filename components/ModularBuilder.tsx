@@ -3,13 +3,13 @@
 import { useState, useRef, useMemo } from 'react'
 import {
   Plus, Search, ChevronDown, ChevronUp,
-  Trash2, X, Dumbbell, Calendar, SlidersHorizontal, Sparkles, Printer,
+  Trash2, X, Dumbbell, Calendar, SlidersHorizontal, Printer,
   Maximize2, Minimize2,
 } from 'lucide-react'
 import { toast } from 'sonner'
 import type { ExerciseBank, IntensityTechnique } from '@/types/workout'
 import { saveCompleteRoutine } from '@/app/actions/workouts'
-import // // AIAssistantModal, { type AIAssistantData } from './// // AIAssistantModal'
+
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 interface ExerciseEntry {
@@ -74,28 +74,6 @@ function normalizeFilterValue(value: string) {
 }
 
 const uid = () => Math.random().toString(36).slice(2, 11)
-
-function isAIAssistantData(value: unknown): value is AIAssistantData {
-  if (typeof value !== 'object' || value === null) return false
-
-  const data = value as Record<string, unknown>
-  return (
-    Array.isArray(data.suggested_exercises) &&
-    data.suggested_exercises.length > 0 &&
-    data.suggested_exercises.every(exercise => typeof exercise === 'string') &&
-    typeof data.biomechanical_reason === 'string' &&
-    data.biomechanical_reason.trim().length > 0 &&
-    typeof data.adjusted_rir === 'number' &&
-    Number.isInteger(data.adjusted_rir) &&
-    data.adjusted_rir >= 0 &&
-    data.adjusted_rir <= 5
-  )
-}
-
-function getResponseError(value: unknown): string | null {
-  if (typeof value !== 'object' || value === null || !('error' in value)) return null
-  return typeof value.error === 'string' ? value.error : null
-}
 
 // ─── ExerciseCard ─────────────────────────────────────────────────────────────
 
@@ -332,7 +310,7 @@ function DayBlockCard({
 
           <div className="space-y-2">
             <p className="text-[10px] font-bold uppercase tracking-widest text-slate-500">
-              {searchQuery ? `Resultados para &quot;${searchQuery}&quot;` : 'Banco de Ejercicios'}
+              {searchQuery ? `Resultados para "${searchQuery}"` : 'Banco de Ejercicios'}
             </p>
             <div className="max-h-52 overflow-y-auto space-y-1 [scrollbar-width:thin]">
               {filtered.length === 0 ? (
@@ -366,12 +344,6 @@ function DayBlockCard({
 export default function ModularBuilder({ exerciseBank, onSave }: Props) {
   const [isSaving, setIsSaving] = useState(false)
   const [isFullscreen, setIsFullscreen] = useState(false)
-  const [isAIModalOpen, setIsAIModalOpen] = useState(false)
-  const [aiData, setAiData] = useState<AIAssistantData | null>(null)
-  const [selectedExerciseId, setSelectedExerciseId] = useState('')
-  const [athleteMessage, setAthleteMessage] = useState('')
-  const [isAILoading, setIsAILoading] = useState(false)
-  const [aiError, setAiError] = useState<string | null>(null)
 
   const [days,       setDays]       = useState<DayBlock[]>([])
   const [activeDay,  setActiveDay]  = useState<string | null>(null)
@@ -381,18 +353,6 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
   const [addingDay,  setAddingDay]  = useState(false)
   const [newDayName, setNewDayName] = useState('')
   const searchRef = useRef<HTMLInputElement>(null)
-  const exerciseOptions = useMemo(
-    () => days.flatMap(day =>
-      day.exercises.map(entry => ({
-        id: entry.localId,
-        label: `${day.day_name} · ${entry.name}`,
-      }))
-    ),
-    [days]
-  )
-  const activeExerciseId = exerciseOptions.some(option => option.id === selectedExerciseId)
-    ? selectedExerciseId
-    : exerciseOptions[0]?.id ?? ''
 
   const handleSaveRoutine = async () => {
     if (isSaving || days.length === 0) return
@@ -436,119 +396,6 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
     setActiveDay(block.localId)
     setNewDayName('')
     setAddingDay(false)
-  }
-
-  const openAIAssistant = () => {
-    setAiData(null)
-    setAiError(null)
-    setIsAIModalOpen(true)
-  }
-
-  const handleSimularIA = async () => {
-    const target = days
-      .flatMap(day => day.exercises)
-      .find(entry => entry.localId === activeExerciseId)
-
-    if (!target) {
-      setAiError('Añade un ejercicio a la rutina antes de solicitar una alternativa.')
-      return
-    }
-
-    if (!athleteMessage.trim()) {
-      setAiError('Describe la molestia o dificultad reportada por el atleta.')
-      return
-    }
-
-    setIsAILoading(true)
-    setAiError(null)
-    setAiData(null)
-
-    try {
-      const response = await fetch('/api/ai-contingency', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        cache: 'no-store',
-        body: JSON.stringify({
-          athleteMessage: athleteMessage.trim(),
-          currentExercise: target.name,
-          exerciseBank: exerciseBank.map(({ name, category, equipment }) => ({
-            name,
-            category,
-            equipment,
-          })),
-        }),
-      })
-
-      let result: unknown
-      try {
-        result = await response.json()
-      } catch {
-        throw new Error('El servidor devolvió una respuesta no válida.')
-      }
-
-      if (!response.ok) {
-        throw new Error(getResponseError(result) ?? `No se pudo analizar la contingencia (${response.status}).`)
-      }
-
-      if (!isAIAssistantData(result)) {
-        throw new Error('La IA devolvió una sugerencia incompleta o con datos no válidos.')
-      }
-
-      const matchedSuggestions: string[] = []
-      for (const suggestion of result.suggested_exercises) {
-        const match = exerciseBank.find(
-          exercise => exercise.name.trim().localeCompare(suggestion.trim(), 'es', { sensitivity: 'base' }) === 0
-        )
-        if (match && !matchedSuggestions.includes(match.name)) {
-          matchedSuggestions.push(match.name)
-        }
-      }
-
-      if (matchedSuggestions.length === 0) {
-        throw new Error('La IA no propuso alternativas que existan en tu banco de ejercicios.')
-      }
-
-      setAiData({ ...result, suggested_exercises: matchedSuggestions })
-    } catch (error) {
-      const message = error instanceof Error
-        ? error.message
-        : 'No se pudo generar una alternativa. Inténtalo de nuevo.'
-      setAiError(message)
-      toast.error(message)
-    } finally {
-      setIsAILoading(false)
-    }
-  }
-
-  const applyAIAlternative = (exerciseName: string) => {
-    const replacement = exerciseBank.find(
-      exercise => exercise.name.localeCompare(exerciseName, 'es', { sensitivity: 'base' }) === 0
-    )
-    const target = days.flatMap(day => day.exercises).find(entry => entry.localId === activeExerciseId)
-
-    if (!replacement || !target || !aiData) {
-      const message = 'No se pudo aplicar la alternativa. Revisa el ejercicio seleccionado e inténtalo de nuevo.'
-      setAiError(message)
-      toast.error(message)
-      return
-    }
-
-    setDays(previous => previous.map(day => ({
-      ...day,
-      exercises: day.exercises.map(entry =>
-        entry.localId === target.localId
-          ? {
-              ...entry,
-              exercise_id: replacement.id,
-              name: replacement.name,
-              rir_target: aiData.adjusted_rir,
-            }
-          : entry
-      ),
-    })))
-    setIsAIModalOpen(false)
-    setAiData(null)
-    toast.success('Alternativa aplicada al constructor. Guarda la rutina para conservar los cambios.')
   }
 
   const totalExercises = days.reduce((n, d) => n + d.exercises.length, 0)
@@ -775,6 +622,7 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           </button>
         </div>
       )}
+
       {isFullscreen && (
         <button
           type="button"
@@ -786,34 +634,6 @@ export default function ModularBuilder({ exerciseBank, onSave }: Props) {
           Salir de pantalla completa
         </button>
       )}
-      {/* ── AI Assistant Button ── */}
-      <button 
-        type="button"
-        onClick={openAIAssistant}
-        className="fixed bottom-6 right-6 flex items-center gap-2 bg-[#FF5A00] hover:bg-[#ff6a1a] text-white px-5 py-3 rounded-full font-bold shadow-[0_0_20px_rgba(255,90,0,0.4)] z-40 transition-all active:scale-95"
-      >
-        <Sparkles className="w-5 h-5" />
-        Asistente IA
-      </button>
-      {/* ── AI Assistant Modal ── */}
-      <// // AIAssistantModal
-        isOpen={isAIModalOpen}
-        onClose={() => setIsAIModalOpen(false)}
-        exerciseOptions={exerciseOptions}
-        selectedExerciseId={activeExerciseId}
-        onSelectedExerciseChange={setSelectedExerciseId}
-        athleteMessage={athleteMessage}
-        onAthleteMessageChange={setAthleteMessage}
-        isLoading={isAILoading}
-        error={aiError}
-        aiData={aiData}
-        onGenerate={handleSimularIA}
-        onReset={() => {
-          setAiData(null)
-          setAiError(null)
-        }}
-        onApprove={applyAIAlternative}
-      />
     </div>
   )
 }
